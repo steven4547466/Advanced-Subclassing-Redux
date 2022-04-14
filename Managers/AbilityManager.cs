@@ -102,8 +102,8 @@ namespace AdvancedSubclassingRedux.Managers
 
                                 if (propToCheckString.Contains(" is "))
                                 {
-                                    Type expectedType = value.GetType();
-                                    if (expectedType != Type.GetType(split[1].Trim() + ", " + expectedType.Assembly.FullName))
+                                    Type expectedType = value?.GetType();
+                                    if (expectedType != Type.GetType(split[1].Trim() + ", " + expectedType?.Assembly?.FullName))
                                     {
                                         skip = true;
                                         break;
@@ -111,51 +111,79 @@ namespace AdvancedSubclassingRedux.Managers
                                 }
                                 else
                                 {
-                                    Type expectedType = value.GetType();
+                                    Type expectedType = value?.GetType();
                                     Type t = null;
                                     object valToCheck = null;
 
-                                    if (split[1].Contains('.'))
-                                        t = Type.GetType(split[1].Substring(0, split[1].LastIndexOf('.')) + ", " + expectedType.Assembly.FullName);
-                                    else
-                                    {
-                                        valToCheck = Convert.ChangeType(split[1].Trim(), expectedType);
-                                        t = valToCheck.GetType();
-                                    }
+                                    string trimmed = split[1].Trim();
 
-                                    if (expectedType != t)
+                                    if (trimmed != "null")
                                     {
-                                        Log.Info("Type mismatch: " + expectedType.FullName + " != " + t.FullName);
-                                        skip = true;
-                                        break;
-                                    }
-
-                                    if (valToCheck == null)
-                                    {
-                                        if (expectedType.IsEnum)
-                                        {
-                                            valToCheck = Enum.Parse(expectedType, split[1].Substring(split[1].LastIndexOf('.') + 1).Trim());
-                                        }
+                                        if (split[1].Contains('.'))
+                                            t = Type.GetType(split[1].Substring(0, split[1].LastIndexOf('.')) + ", " + expectedType.Assembly.FullName);
                                         else
                                         {
-                                            valToCheck = Convert.ChangeType(split[1].Substring(split[1].LastIndexOf('.') + 1), expectedType);
+                                            valToCheck = Convert.ChangeType(trimmed, expectedType);
+                                            t = valToCheck.GetType();
+                                        }
+
+                                        if (expectedType != t)
+                                        {
+                                            Log.Info("Type mismatch: " + expectedType.FullName + " != " + t.FullName);
+                                            skip = true;
+                                            break;
+                                        }
+
+                                        if (valToCheck == null)
+                                        {
+                                            if (expectedType.IsEnum)
+                                            {
+                                                valToCheck = Enum.Parse(expectedType, split[1].Substring(split[1].LastIndexOf('.') + 1).Trim());
+                                            }
+                                            else
+                                            {
+                                                valToCheck = Convert.ChangeType(split[1].Substring(split[1].LastIndexOf('.') + 1), expectedType);
+                                            }
                                         }
                                     }
 
                                     if (propToCheckString.Contains(" != "))
                                     {
-                                        if (value.Equals(valToCheck))
+                                        if (valToCheck != null)
                                         {
-                                            skip = true;
-                                            break;
+                                            if (value.Equals(valToCheck))
+                                            {
+                                                skip = true;
+                                                break;
+                                            }
+                                        } 
+                                        else
+                                        {
+                                            if (value == null)
+                                            {
+                                                skip = true;
+                                                break;
+                                            }
                                         }
+                                        
                                     }
                                     else if (propToCheckString.Contains(" == "))
                                     {
-                                        if (!value.Equals(valToCheck))
+                                        if (valToCheck != null)
                                         {
-                                            skip = true;
-                                            break;
+                                            if (!value.Equals(valToCheck))
+                                            {
+                                                skip = true;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (value != null)
+                                            {
+                                                skip = true;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
