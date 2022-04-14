@@ -38,6 +38,8 @@ namespace AdvancedSubclassingRedux.Managers
                             hasCheck = true;
                             string propToCheckString = (string)check;
                             string[] split = propToCheckString.Split(new string[] { " is ", " != ", " == " }, StringSplitOptions.None);
+                            
+                            // Handle getting the player and ensuring they have a subclass with the ability.
                             if (split.Length == 1)
                             {
                                 player = (Player)type.GetProperty(propToCheckString).GetValue(eventArgs);
@@ -61,6 +63,7 @@ namespace AdvancedSubclassingRedux.Managers
                             }
                             else
                             {
+                                // Handle other checks.
                                 object value = null;
                                 if (split[0].Contains('.'))
                                 {
