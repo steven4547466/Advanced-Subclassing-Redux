@@ -1,4 +1,5 @@
-﻿using Exiled.API.Features;
+﻿using DynamicExpresso;
+using Exiled.API.Features;
 using Exiled.Loader;
 using NCalc;
 using System;
@@ -15,7 +16,9 @@ namespace AdvancedSubclassingRedux.Managers
 	{
 		public static Dictionary<string, Ability> Abilities { get; set; } = new Dictionary<string, Ability>();
 
-		internal static Dictionary<Type, List<Tuple<Ability, string>>> Delegates { get; set; } = new Dictionary<Type, List<Tuple<Ability, string>>>();
+		internal static Dictionary<EventInfo, int> EventsConnected { get; set; } = new Dictionary<EventInfo, int>();
+		internal static Dictionary<EventInfo, Delegate> Delegates { get; set; } = new Dictionary<EventInfo, Delegate>();
+		internal static Dictionary<Type, List<Tuple<Ability, string>>> AbilitiesAndEvents { get; set; } = new Dictionary<Type, List<Tuple<Ability, string>>>();
 
 		internal static object EvaluateMath<T>(T eventArgs, Dictionary<string, object> localValues, string expression)
 		{
@@ -59,15 +62,11 @@ namespace AdvancedSubclassingRedux.Managers
 			foreach (PropertyInfo property in props)
 			{
 				mathExpression.Parameters[property.Name] = property.GetValue(eventArgs);
-				//if (expression.Contains(property.Name))
-				//	expression = expression.Replace(property.Name, property.GetValue(eventArgs).ToString());
 			}
 
 			foreach (KeyValuePair<string, object> keyValuePair in localValues)
 			{
 				mathExpression.Parameters[keyValuePair.Key] = keyValuePair.Value;
-				//if (expression.Contains(keyValuePair.Key))
-				//	expression = expression.Replace(keyValuePair.Key, keyValuePair.Value.ToString());
 			}
 
 			return mathExpression.Evaluate();
@@ -76,14 +75,44 @@ namespace AdvancedSubclassingRedux.Managers
 		public static void Helper<T>(T eventArgs)
 		{
 			Type type = eventArgs.GetType();
-			if (Delegates.TryGetValue(type, out List<Tuple<Ability, string>> abilities))
+			if (AbilitiesAndEvents.TryGetValue(type, out List<Tuple<Ability, string>> abilities))
 			{
 				foreach(Tuple<Ability, string> tuple in abilities)
 				{
 					Ability ability = tuple.Item1;
 					string eventName = tuple.Item2;
+					Player player = null;
+					
+					if (ability.Events[eventName].TryGetValue("check", out object propToCheck))
+					{
+						string propToCheckString = (string)propToCheck;
+						player = (Player)type.GetProperty(propToCheckString).GetValue(eventArgs);
+						if (Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass))
+						{
+							if (!subclass.AbilitiesList.Contains(ability))
+							{
+								continue;
+							}
+						}
+						else
+						{
+							continue;
+						}
+					} 
+					else
+					{
+						Log.Warn("Ability with name: " + ability.Name + " has no check property! Skipping it!");
+						continue;
+					}
+
+					Log.Info(ability.Name + " is being executed!");
+
+					if (!ability.Use(player))
+						return;
+
 					Dictionary<string, object> localValues = new Dictionary<string, object>();
-					foreach (string name in ability.Events[eventName].Keys)
+					
+					void Eval(string name)
 					{
 						if (name.StartsWith("set_"))
 						{
@@ -100,12 +129,12 @@ namespace AdvancedSubclassingRedux.Managers
 							if (((string)ability.Events[eventName][name]).Contains("."))
 							{
 								throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
-							}	
+							}
 							string valName = name.Substring(4);
 							PropertyInfo prop = type.GetProperty(valName, BindingFlags.Public | BindingFlags.Instance);
 							localValues[(string)ability.Events[eventName][name]] = prop?.GetValue(eventArgs);
 						}
-						else if (name == "eval")
+						else if (name.StartsWith("eval"))
 						{
 							string saveName = ((string)ability.Events[eventName][name]).Split('>')[1].Trim();
 							if (saveName.Contains("."))
@@ -115,9 +144,47 @@ namespace AdvancedSubclassingRedux.Managers
 							string expression = ((string)ability.Events[eventName][name]).Split('>')[0].Trim();
 							var val = EvaluateMath(eventArgs, localValues, expression);
 							localValues[saveName] = val;
+						} 
+						else if (name.StartsWith("call"))
+						{
+							string[] split = ((string)ability.Events[eventName][name]).Split('>');
+							string valname = split[0].Trim();
+							string methodName = split[1].Trim();
+
+							if (localValues.TryGetValue(valname, out object val))
+							{
+								MethodInfo method = val.GetType().GetMethod(methodName);
+								if (method != null)
+								{
+									method.Invoke(val, new object[] { });
+								}
+								else
+								{
+									Log.Warn($"Method {methodName} not found in {val.GetType().Name}!");
+								}
+							}
+							else
+							{
+								Log.Warn($"Local variable {valname} not found!");
+							}
 						}
 					}
+
+
+					foreach (string name in ability.Events[eventName].Keys)
+					{
+						Eval(name);
+					}
 				}
+			}
+		}
+
+		internal static void DisconnectFromEvent(EventInfo eventInfo)
+		{
+			if (Delegates.TryGetValue(eventInfo, out Delegate d))
+			{
+				eventInfo.RemoveEventHandler(null, d);
+				Delegates.Remove(eventInfo);
 			}
 		}
 
@@ -127,8 +194,10 @@ namespace AdvancedSubclassingRedux.Managers
 			foreach (Ability ability in Abilities.Values)
 			{
 				ability.Unload();
+				
 			}
 			Abilities.Clear();
+			AbilitiesAndEvents.Clear();
 
 			List<string> classPaths = new List<string>();
 
@@ -187,19 +256,24 @@ namespace AdvancedSubclassingRedux.Managers
 								{
 									args.Add(p.ParameterType);
 								}
-
-								MethodInfo mi = typeof(AbilityManager).GetMethod("Helper");
-
-								foreach (ParameterInfo p in mi.GetParameters())
+								
+								if (!Delegates.ContainsKey(eventInfo))
 								{
-									Log.Info(p.ParameterType);
-								}
+									MethodInfo mi = typeof(AbilityManager).GetMethod("Helper");
 
-								Delegate del = Delegate.CreateDelegate(eventInfo.EventHandlerType, mi.MakeGenericMethod(args.ToArray()));
-								eventInfo.AddEventHandler(null, del);
-								if (!Delegates.ContainsKey(args[0]))
-									Delegates.Add(args[0], new List<Tuple<Ability, string>>());
-								Delegates[args[0]].Add(new Tuple<Ability, string>(ability, eventName));
+									Delegate del = Delegate.CreateDelegate(eventInfo.EventHandlerType, mi.MakeGenericMethod(args.ToArray()));
+									eventInfo.AddEventHandler(null, del);
+									Delegates.Add(eventInfo, del);
+								}
+								
+								if(!EventsConnected.ContainsKey(eventInfo))
+									EventsConnected.Add(eventInfo, 0);
+								EventsConnected[eventInfo]++;
+								
+								if (!AbilitiesAndEvents.ContainsKey(args[0]))
+									AbilitiesAndEvents.Add(args[0], new List<Tuple<Ability, string>>());
+								AbilitiesAndEvents[args[0]].Add(new Tuple<Ability, string>(ability, eventName));
+								ability.EventInfos.Add(eventInfo);
 								break;
 							}
 						}

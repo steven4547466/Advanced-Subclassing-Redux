@@ -28,8 +28,9 @@ namespace AdvancedSubclassingRedux
 		public Dictionary<string, float> FloatOptions { get; set; } = new Dictionary<string, float>();
 		
 		public List<string> Abilities { get; set; } = new List<string>();
-
 		public List<Ability> AbilitiesList { get; set; } = new List<Ability>();
+
+		public Dictionary<string, double> AbilityCooldowns { get; set; } = new Dictionary<string, double>();
 
 		public void Unload()
 		{
@@ -43,12 +44,14 @@ namespace AdvancedSubclassingRedux
 				player.RankName = snapshot.Badge;
 				player.RankColor = snapshot.BadgeColor;
 				player.DisplayNickname = snapshot.Nickname;
+				Tracking.PlayerSnapshots.Remove(player);
 			}
 		}
 
 		public void OnGive(Player player)
 		{
 			Tracking.PlayerSnapshots.Add(player, new PlayerSnapshot(player));
+			Tracking.PlayerLastUsedAbilities.Add(player, new Dictionary<Ability, DateTime>());
 			if (StringOptions.TryGetValue("GotClassMessage", out string classMessage))
 			{
 				player.Broadcast(IntOptions.TryGetValue("GotClassMessageDuration", out int duration) ? (ushort) duration : (ushort) 5, classMessage, Broadcast.BroadcastFlags.Normal);

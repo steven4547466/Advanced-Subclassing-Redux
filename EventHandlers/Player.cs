@@ -18,29 +18,5 @@ namespace AdvancedSubclassingRedux.EventHandlers
 		{
 			SubclassManager.MaybeAddClasses(ev.Player, ev);
 		}
-
-		public static void OnPlayerHurt(HurtingEventArgs ev)
-		{
-			if (Tracking.PlayersWithClasses.TryGetValue(ev.Target, out Subclass subclass))
-			{
-				foreach (Ability ability in subclass.AbilitiesList)
-				{
-					if (ability.Events.ContainsKey("OnPlayerHurt"))
-					{
-						Type type = ev.GetType();
-						
-						foreach (string name in ability.Events["OnPlayerHurt"].Keys)
-						{
-							if (name.StartsWith("set_"))
-							{
-								string valName = name.Substring(4);
-								PropertyInfo prop = type.GetProperty(valName, BindingFlags.Public | BindingFlags.Instance);
-								prop?.SetValue(ev, Convert.ChangeType(ability.Events["OnPlayerHurt"][name], prop.PropertyType));
-							}
-						}
-					}
-				}
-			}
-		}
 	}
 }

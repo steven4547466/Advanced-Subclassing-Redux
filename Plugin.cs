@@ -2,6 +2,7 @@
 using Exiled.API.Features;
 using System;
 using PlayerEvents = Exiled.Events.Handlers.Player;
+using ServerEvents = Exiled.Events.Handlers.Server;
 
 namespace AdvancedSubclassingRedux
 {
@@ -28,7 +29,8 @@ namespace AdvancedSubclassingRedux
 			SubclassManager.ReloadSubclasses();
 
 			PlayerEvents.ChangingRole += EventHandlers.Player.OnChangingRole;
-			PlayerEvents.Hurting += EventHandlers.Player.OnPlayerHurt;
+			
+			ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
 			
 			base.OnEnabled();
 		}
@@ -36,7 +38,8 @@ namespace AdvancedSubclassingRedux
 		public override void OnDisabled()
 		{
 			PlayerEvents.ChangingRole -= EventHandlers.Player.OnChangingRole;
-			PlayerEvents.Hurting -= EventHandlers.Player.OnPlayerHurt;
+			
+			ServerEvents.RestartingRound -= EventHandlers.Server.OnRestartingRound;
 
 			Harmony.UnpatchAll(Harmony.Id);
 			Instance = null;
