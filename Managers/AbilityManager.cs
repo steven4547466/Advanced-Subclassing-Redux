@@ -1,5 +1,4 @@
-﻿using DynamicExpresso;
-using Exiled.API.Features;
+﻿using Exiled.API.Features;
 using Exiled.Loader;
 using NCalc;
 using System;
