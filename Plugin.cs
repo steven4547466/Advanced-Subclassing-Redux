@@ -8,42 +8,42 @@ namespace AdvancedSubclassingRedux
 {
     public class Plugin : Plugin<Config>
     {
-		public static Plugin Instance;
+        public static Plugin Instance;
 
-		public override string Author => "Steven4547466";
-		public override string Name => "Advanced Subclassing Redux";
-		public override string Prefix => "ASR";
-		public override Version Version => new Version(1, 0, 0);
-		public override Version RequiredExiledVersion => new Version(5, 0, 0, 0);
+        public override string Author => "Steven4547466";
+        public override string Name => "Advanced Subclassing Redux";
+        public override string Prefix => "ASR";
+        public override Version Version => new Version(1, 0, 0);
+        public override Version RequiredExiledVersion => new Version(5, 0, 0, 0);
 
-		public HarmonyLib.Harmony Harmony { get; private set; }
+        public HarmonyLib.Harmony Harmony { get; private set; }
 
-		public override void OnEnabled()
-		{
-			Instance = this;
+        public override void OnEnabled()
+        {
+            Instance = this;
 
-			Harmony = new HarmonyLib.Harmony("steven4547466.AdvancedSubclassingRedux-" + DateTime.Now.Ticks.ToString());
-			Harmony.PatchAll();
+            Harmony = new HarmonyLib.Harmony("steven4547466.AdvancedSubclassingRedux-" + DateTime.Now.Ticks.ToString());
+            Harmony.PatchAll();
 
-			AbilityManager.ReloadAbilities();
-			SubclassManager.ReloadSubclasses();
+            AbilityManager.ReloadAbilities();
+            SubclassManager.ReloadSubclasses();
 
-			PlayerEvents.ChangingRole += EventHandlers.Player.OnChangingRole;
-			
-			ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
-			
-			base.OnEnabled();
-		}
+            PlayerEvents.ChangingRole += EventHandlers.Player.OnChangingRole;
 
-		public override void OnDisabled()
-		{
-			PlayerEvents.ChangingRole -= EventHandlers.Player.OnChangingRole;
-			
-			ServerEvents.RestartingRound -= EventHandlers.Server.OnRestartingRound;
+            ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
 
-			Harmony.UnpatchAll(Harmony.Id);
-			Instance = null;
-			base.OnDisabled();
-		}
-	}
+            base.OnEnabled();
+        }
+
+        public override void OnDisabled()
+        {
+            PlayerEvents.ChangingRole -= EventHandlers.Player.OnChangingRole;
+
+            ServerEvents.RestartingRound -= EventHandlers.Server.OnRestartingRound;
+
+            Harmony.UnpatchAll(Harmony.Id);
+            Instance = null;
+            base.OnDisabled();
+        }
+    }
 }
