@@ -60,6 +60,14 @@ namespace AdvancedSubclassingRedux.Managers
 				else
 				{
 					Subclass subclass = Helpers.Deserializer.Deserialize<Subclass>(file);
+					if (subclass.BoolOptions.TryGetValue("enabled", out bool enabled))
+					{
+						if (!enabled)
+						{
+							Log.Debug("Subclass " + subclass.Name + " is disabled, skipping", Plugin.Instance.Config.Debug);
+							continue;
+						}
+					}
 					Subclasses.Add(subclass.Name, subclass);
 					foreach(RoleType roleType in subclass.AffectsRoles.Keys)
 					{

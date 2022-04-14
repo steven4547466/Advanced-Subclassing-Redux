@@ -13,7 +13,11 @@ namespace AdvancedSubclassingRedux
 	{
 		public string Name { get; set; }
 
+		public bool Enabed { get; set; } = true;
+
 		public Dictionary<string, List<Dictionary<string, object>>> Events { get; set; } = new Dictionary<string, List<Dictionary<string, object>>>();
+
+		public List<Dictionary<string, object>> Update { get; set; } = new List<Dictionary<string, object>>();
 
 		public List<EventInfo> EventInfos { get; set; } = new List<EventInfo>();
 

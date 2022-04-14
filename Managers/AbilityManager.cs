@@ -220,7 +220,15 @@ namespace AdvancedSubclassingRedux.Managers
 								else
 								{
 									Type expectedType = value.GetType();
-									Type t = Type.GetType(split[1].Substring(0, split[1].LastIndexOf('.')) + ", " + expectedType.Assembly.FullName);
+									Type t = null;
+									object valToCheck = null;
+									if (split[1].Contains('.'))
+										t = Type.GetType(split[1].Substring(0, split[1].LastIndexOf('.')) + ", " + expectedType.Assembly.FullName);
+									else
+									{
+										valToCheck = Convert.ChangeType(split[1].Trim(), expectedType);
+										t = valToCheck.GetType();
+									}
 									if (expectedType != t)
 									{
 										Log.Info("Type mismatch: " + expectedType.FullName + " != " + t.FullName);
@@ -228,14 +236,16 @@ namespace AdvancedSubclassingRedux.Managers
 										break;
 									}
 
-									object valToCheck = null;
-									if (expectedType.IsEnum)
+									if (valToCheck == null)
 									{
-										valToCheck = Enum.Parse(expectedType, split[1].Substring(split[1].LastIndexOf('.') + 1).Trim());
-									}
-									else
-									{
-										valToCheck = Convert.ChangeType(split[1].Substring(split[1].LastIndexOf('.') + 1), expectedType);
+										if (expectedType.IsEnum)
+										{
+											valToCheck = Enum.Parse(expectedType, split[1].Substring(split[1].LastIndexOf('.') + 1).Trim());
+										}
+										else
+										{
+											valToCheck = Convert.ChangeType(split[1].Substring(split[1].LastIndexOf('.') + 1), expectedType);
+										}
 									}
 
 									if (propToCheckString.Contains(" != "))
@@ -267,7 +277,7 @@ namespace AdvancedSubclassingRedux.Managers
 					if (!ability.Use(player))
 						return;
 
-					Timing.RunCoroutine(Eval(ability, eventName, type, eventArgs));
+					Timing.RunCoroutine(Helpers.Eval(ability, type, eventArgs, ability.Events[eventName]));
 				}
 			}
 		}
@@ -336,6 +346,11 @@ namespace AdvancedSubclassingRedux.Managers
 				else
 				{
 					Ability ability = Helpers.Deserializer.Deserialize<Ability>(file);
+					if (!ability.Enabed)
+					{
+						Log.Debug("Ability " + ability.Name + " is disabled, skipping", Plugin.Instance.Config.Debug);
+						continue;
+					}
 					foreach(string eventName in ability.Events.Keys)
 					{
 						foreach (Type eventType in eventTypes)

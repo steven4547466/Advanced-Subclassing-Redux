@@ -5,8 +5,10 @@ using PlayerStatsSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -46,6 +48,11 @@ namespace AdvancedSubclassingRedux
 				player.DisplayNickname = snapshot.Nickname;
 				Tracking.PlayerSnapshots.Remove(player);
 			}
+
+			if (player.GameObject.TryGetComponent(out SubclassBehaviour subclassBehaviour))
+			{
+				subclassBehaviour.Destroy();
+			}
 		}
 
 		public void OnGive(Player player)
@@ -63,6 +70,22 @@ namespace AdvancedSubclassingRedux
 					Cassie.MessageTranslated(cassieMessage, cassieSubtitles);
 				else
 					Cassie.Message(cassieMessage);
+			}
+
+			bool giveBehaviour = false;
+			foreach (Ability ability in AbilitiesList)
+			{
+				if (ability.Update != null && ability.Update.Count > 0)
+				{
+					giveBehaviour = true;
+					break;
+				}
+			}
+
+			if (giveBehaviour)
+			{
+				Log.Info("Giving behaviour");
+				player.GameObject.AddComponent<SubclassBehaviour>();
 			}
 
 			Timing.CallDelayed(0.3f, () =>
@@ -92,5 +115,36 @@ namespace AdvancedSubclassingRedux
 
 	public class SubclassSpawnParameter
 	{
+	}
+
+	public class SubclassBehaviour : MonoBehaviour
+	{
+		public bool Enabled { get; set; } = true;
+		public Player Player { get; set; }
+		public List<Ability> Abilities { get; set; }
+
+		private void Awake()
+		{
+			Player = Player.Get(gameObject);
+			Abilities = Tracking.PlayersWithClasses[Player].AbilitiesList.Where(a => a.Update != null && a.Update.Count > 0).ToList();
+		}
+
+
+		private void Update()
+		{
+			if (Enabled)
+			{
+				foreach (Ability ability in Abilities)
+				{
+					Timing.RunCoroutine(Helpers.Eval(ability, this.GetType(), this, ability.Update));
+				}
+			}
+		}
+
+		public void Destroy()
+		{
+			Enabled = false;
+			DestroyImmediate(this, true);
+		}
 	}
 }
