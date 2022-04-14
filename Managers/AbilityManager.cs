@@ -202,11 +202,23 @@ namespace AdvancedSubclassingRedux.Managers
 										{
 											value = propertyInfo.GetValue(value);
 										}
+
+										if (value == null)
+										{
+											skip = true;
+											break;
+										}
 									}
 								}
 								else
 								{
 									value = type.GetProperty(split[0]).GetValue(eventArgs);
+								}
+
+								if (skip || value == null)
+								{
+									skip = true;
+									break;
 								}
 
 								if (propToCheckString.Contains(" is "))
@@ -222,6 +234,7 @@ namespace AdvancedSubclassingRedux.Managers
 									Type expectedType = value.GetType();
 									Type t = null;
 									object valToCheck = null;
+									
 									if (split[1].Contains('.'))
 										t = Type.GetType(split[1].Substring(0, split[1].LastIndexOf('.')) + ", " + expectedType.Assembly.FullName);
 									else
@@ -229,6 +242,7 @@ namespace AdvancedSubclassingRedux.Managers
 										valToCheck = Convert.ChangeType(split[1].Trim(), expectedType);
 										t = valToCheck.GetType();
 									}
+									
 									if (expectedType != t)
 									{
 										Log.Info("Type mismatch: " + expectedType.FullName + " != " + t.FullName);
@@ -258,7 +272,7 @@ namespace AdvancedSubclassingRedux.Managers
 									} 
 									else if (propToCheckString.Contains(" == "))
 									{
-										if (value != valToCheck)
+										if (!value.Equals(valToCheck))
 										{
 											skip = true;
 											break;
