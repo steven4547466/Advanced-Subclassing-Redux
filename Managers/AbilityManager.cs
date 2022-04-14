@@ -71,10 +71,11 @@ namespace AdvancedSubclassingRedux.Managers
                                     value = type.GetProperty(split2[0]).GetValue(eventArgs);
                                     for (int i = 1; i < split2.Length; i++)
                                     {
-                                        PropertyInfo propertyInfo = value.GetType().GetProperty(split2[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
+                                        Type type1 = value.GetType();
+                                        PropertyInfo propertyInfo = type1.GetProperty(split2[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
                                         if (propertyInfo == null)
                                         {
-                                            value = value.GetType().GetField(split2[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static).GetValue(value);
+                                            value = type1.GetField(split2[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static).GetValue(value);
                                         }
                                         else
                                         {
@@ -101,7 +102,8 @@ namespace AdvancedSubclassingRedux.Managers
 
                                 if (propToCheckString.Contains(" is "))
                                 {
-                                    if (value.GetType() != Type.GetType(split[1].Trim() + ", " + value.GetType().Assembly.FullName))
+                                    Type expectedType = value.GetType();
+                                    if (expectedType != Type.GetType(split[1].Trim() + ", " + expectedType.Assembly.FullName))
                                     {
                                         skip = true;
                                         break;
