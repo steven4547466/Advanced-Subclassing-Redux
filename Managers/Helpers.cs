@@ -219,12 +219,13 @@ namespace AdvancedSubclassingRedux.Managers
                 }
                 else if (name.StartsWith("eval"))
                 {
-                    string saveName = ((string)value).Split('>')[1].Trim();
+                    string[] split = ((string)value).Split('>');
+                    string saveName = split[1].Trim();
                     if (saveName.Contains("."))
                     {
                         throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
                     }
-                    string expression = ((string)value).Split('>')[0].Trim();
+                    string expression = split[0].Trim();
                     var val = EvaluateMath(main, localValues, expression);
                     localValues[saveName] = val;
                 }
