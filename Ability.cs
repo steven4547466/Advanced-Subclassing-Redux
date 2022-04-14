@@ -13,7 +13,7 @@ namespace AdvancedSubclassingRedux
 	{
 		public string Name { get; set; }
 
-		public Dictionary<string, Dictionary<string, object>> Events { get; set; } = new Dictionary<string, Dictionary<string, object>>();
+		public Dictionary<string, List<Dictionary<string, object>>> Events { get; set; } = new Dictionary<string, List<Dictionary<string, object>>>();
 
 		public List<EventInfo> EventInfos { get; set; } = new List<EventInfo>();
 

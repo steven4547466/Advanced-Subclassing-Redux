@@ -1,5 +1,7 @@
-﻿using Exiled.API.Features;
+﻿using DynamicExpresso;
+using Exiled.API.Features;
 using Exiled.Loader;
+using MEC;
 using NCalc;
 using System;
 using System.Collections.Generic;
@@ -71,6 +73,77 @@ namespace AdvancedSubclassingRedux.Managers
 			return mathExpression.Evaluate();
 		}
 
+		internal static IEnumerator<float> Eval<T>(Ability ability, string eventName, Type type, T eventArgs)
+		{
+			Dictionary<string, object> localValues = new Dictionary<string, object>();
+			foreach (Dictionary<string, object> item in ability.Events[eventName])
+			{
+				string name = item.First().Key;
+				object value = item.First().Value;
+
+				if (name.StartsWith("set_"))
+				{
+					string valName = name.Substring(4);
+					PropertyInfo prop = type.GetProperty(valName, BindingFlags.Public | BindingFlags.Instance);
+					object valOrKey = value;
+					if (localValues.TryGetValue((string)valOrKey, out object val))
+						prop?.SetValue(eventArgs, Convert.ChangeType(val, prop.PropertyType));
+					else
+						prop?.SetValue(eventArgs, Convert.ChangeType(valOrKey, prop.PropertyType));
+				}
+				else if (name.StartsWith("get_"))
+				{
+					if (((string)value).Contains("."))
+					{
+						throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
+					}
+					string valName = name.Substring(4);
+					PropertyInfo prop = type.GetProperty(valName, BindingFlags.Public | BindingFlags.Instance);
+					localValues[(string)value] = prop?.GetValue(eventArgs);
+				}
+				else if (name.StartsWith("eval"))
+				{
+					string saveName = ((string)value).Split('>')[1].Trim();
+					if (saveName.Contains("."))
+					{
+						throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
+					}
+					string expression = ((string)value).Split('>')[0].Trim();
+					var val = EvaluateMath(eventArgs, localValues, expression);
+					localValues[saveName] = val;
+				}
+				else if (name.StartsWith("call"))
+				{
+					string[] split = ((string)value).Split('>');
+					string valname = split[0].Trim();
+					string methodName = split[1].Trim();
+
+					if (localValues.TryGetValue(valname, out object val))
+					{
+						MethodInfo method = val.GetType().GetMethod(methodName);
+						if (method != null)
+						{
+							method.Invoke(val, new object[] { });
+						}
+						else
+						{
+							Log.Warn($"Method {methodName} not found in {val.GetType().Name}!");
+						}
+					}
+					else
+					{
+						Log.Warn($"Local variable {valname} not found!");
+					}
+				}
+				else if (name.StartsWith("wait"))
+				{
+					yield return Timing.WaitForSeconds((float)Convert.ToDouble(value));
+				}
+			}
+
+			yield return 0;
+		}
+
 		public static void Helper<T>(T eventArgs)
 		{
 			Type type = eventArgs.GetType();
@@ -81,99 +154,121 @@ namespace AdvancedSubclassingRedux.Managers
 					Ability ability = tuple.Item1;
 					string eventName = tuple.Item2;
 					Player player = null;
-					
-					if (ability.Events[eventName].TryGetValue("check", out object propToCheck))
+					bool hasCheck = false;
+					bool skip = true;
+
+					foreach (Dictionary<string, object> item in ability.Events[eventName])
 					{
-						string propToCheckString = (string)propToCheck;
-						player = (Player)type.GetProperty(propToCheckString).GetValue(eventArgs);
-						if (Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass))
+						if (item.TryGetValue("check", out object check))
 						{
-							if (!subclass.AbilitiesList.Contains(ability))
+							hasCheck = true;
+							string propToCheckString = (string)check;
+							string[] split = propToCheckString.Split(new string[] { " is ", " != ", " == " }, StringSplitOptions.None);
+							if (split.Length == 1)
 							{
-								continue;
+								player = (Player)type.GetProperty(propToCheckString).GetValue(eventArgs);
+								if (Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass))
+								{
+									if (subclass.AbilitiesList.Contains(ability))
+									{
+										skip = false;
+									}
+									else
+									{
+										skip = true;
+										break;
+									}
+								}
+								else
+								{
+									skip = true;
+									break;
+								}
+							}
+							else
+							{
+								object value = null;
+								if (split[0].Contains('.'))
+								{
+									string[] split2 = split[0].Trim().Split('.');
+									value = type.GetProperty(split2[0]).GetValue(eventArgs);
+									for (int i = 1; i < split2.Length; i++)
+									{
+										PropertyInfo propertyInfo = value.GetType().GetProperty(split2[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
+										if (propertyInfo == null)
+										{
+											value = value.GetType().GetField(split2[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static).GetValue(value);
+										}
+										else
+										{
+											value = propertyInfo.GetValue(value);
+										}
+									}
+								}
+								else
+								{
+									value = type.GetProperty(split[0]).GetValue(eventArgs);
+								}
+
+								if (propToCheckString.Contains(" is "))
+								{
+									if (value.GetType() != Type.GetType(split[1].Trim() + ", " + value.GetType().Assembly.FullName))
+									{
+										skip = true;
+										break;
+									}
+								}
+								else
+								{
+									Type expectedType = value.GetType();
+									Type t = Type.GetType(split[1].Substring(0, split[1].LastIndexOf('.')) + ", " + expectedType.Assembly.FullName);
+									if (expectedType != t)
+									{
+										Log.Info("Type mismatch: " + expectedType.FullName + " != " + t.FullName);
+										skip = true;
+										break;
+									}
+
+									object valToCheck = null;
+									if (expectedType.IsEnum)
+									{
+										valToCheck = Enum.Parse(expectedType, split[1].Substring(split[1].LastIndexOf('.') + 1).Trim());
+									}
+									else
+									{
+										valToCheck = Convert.ChangeType(split[1].Substring(split[1].LastIndexOf('.') + 1), expectedType);
+									}
+
+									if (propToCheckString.Contains(" != "))
+									{
+										if (value.Equals(valToCheck))
+										{
+											skip = true;
+											break;
+										}
+									} 
+									else if (propToCheckString.Contains(" == "))
+									{
+										if (value != valToCheck)
+										{
+											skip = true;
+											break;
+										}
+									}
+								}
 							}
 						}
-						else
-						{
-							continue;
-						}
-					} 
-					else
-					{
-						Log.Warn("Ability with name: " + ability.Name + " has no check property! Skipping it!");
-						continue;
 					}
+
+					if (skip || !hasCheck)
+						continue;
 
 					Log.Info(ability.Name + " is being executed!");
 
 					if (!ability.Use(player))
 						return;
 
-					Dictionary<string, object> localValues = new Dictionary<string, object>();
-					
-					void Eval(string name)
-					{
-						if (name.StartsWith("set_"))
-						{
-							string valName = name.Substring(4);
-							PropertyInfo prop = type.GetProperty(valName, BindingFlags.Public | BindingFlags.Instance);
-							object valOrKey = ability.Events[eventName][name];
-							if (localValues.TryGetValue((string)valOrKey, out object val))
-								prop?.SetValue(eventArgs, Convert.ChangeType(val, prop.PropertyType));
-							else
-								prop?.SetValue(eventArgs, Convert.ChangeType(valOrKey, prop.PropertyType));
-						}
-						else if (name.StartsWith("get_"))
-						{
-							if (((string)ability.Events[eventName][name]).Contains("."))
-							{
-								throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
-							}
-							string valName = name.Substring(4);
-							PropertyInfo prop = type.GetProperty(valName, BindingFlags.Public | BindingFlags.Instance);
-							localValues[(string)ability.Events[eventName][name]] = prop?.GetValue(eventArgs);
-						}
-						else if (name.StartsWith("eval"))
-						{
-							string saveName = ((string)ability.Events[eventName][name]).Split('>')[1].Trim();
-							if (saveName.Contains("."))
-							{
-								throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
-							}
-							string expression = ((string)ability.Events[eventName][name]).Split('>')[0].Trim();
-							var val = EvaluateMath(eventArgs, localValues, expression);
-							localValues[saveName] = val;
-						} 
-						else if (name.StartsWith("call"))
-						{
-							string[] split = ((string)ability.Events[eventName][name]).Split('>');
-							string valname = split[0].Trim();
-							string methodName = split[1].Trim();
-
-							if (localValues.TryGetValue(valname, out object val))
-							{
-								MethodInfo method = val.GetType().GetMethod(methodName);
-								if (method != null)
-								{
-									method.Invoke(val, new object[] { });
-								}
-								else
-								{
-									Log.Warn($"Method {methodName} not found in {val.GetType().Name}!");
-								}
-							}
-							else
-							{
-								Log.Warn($"Local variable {valname} not found!");
-							}
-						}
-					}
-
-
-					foreach (string name in ability.Events[eventName].Keys)
-					{
-						Eval(name);
-					}
+					Timing.RunCoroutine(Eval(ability, eventName, type, eventArgs));
 				}
 			}
 		}
