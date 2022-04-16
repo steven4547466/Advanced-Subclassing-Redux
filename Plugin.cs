@@ -1,4 +1,4 @@
-﻿using AdvancedSubclassingRedux.Managers;
+using AdvancedSubclassingRedux.Managers;
 using Exiled.API.Features;
 using System;
 using PlayerEvents = Exiled.Events.Handlers.Player;
@@ -32,7 +32,8 @@ namespace AdvancedSubclassingRedux
 
             ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
 
-            Server.IsHeavilyModded = true;
+            if(!Server.IsHeavilyModded)
+              Server.IsHeavilyModded = true;
 
             base.OnEnabled();
         }
