@@ -10,7 +10,7 @@
             }
 
             Tracking.PlayersWithClasses.Clear();
-            Tracking.PlayerLastUsedAbilities.Clear();
+            Tracking.PlayerAbilityCooldowns.Clear();
         }
     }
 }

@@ -128,8 +128,6 @@ namespace AdvancedSubclassingRedux.Managers
             if (!Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass)) return;
 
             subclass.CleanUp(player);
-
-            Tracking.PlayersWithClasses.Remove(player);
         }
 
         public static void GiveClass(Player player, Subclass subclass)

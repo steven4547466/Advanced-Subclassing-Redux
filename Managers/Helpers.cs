@@ -189,7 +189,7 @@ namespace AdvancedSubclassingRedux.Managers
             return mathExpression.Evaluate();
         }
 
-        internal static IEnumerator<float> Eval<T>(Ability ability, Type type, T main, List<Dictionary<string, object>> toEval)
+        internal static IEnumerator<float> Eval<T>(Type type, T main, List<Dictionary<string, object>> toEval)
         {
             Dictionary<string, object> localValues = new Dictionary<string, object>();
             foreach (Dictionary<string, object> item in toEval)
@@ -211,7 +211,7 @@ namespace AdvancedSubclassingRedux.Managers
                 {
                     if (((string)value).Contains("."))
                     {
-                        throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
+                        throw new Exception($"Attempted to use '.' while saving local variable.\nI literally told you not to use '.' when saving local variables...");
                     }
                     string valName = name.Substring(4);
                     Tuple<PropertyInfo, object> prop = GetInfoWithFinalValue<PropertyInfo>(valName, main);
@@ -223,7 +223,7 @@ namespace AdvancedSubclassingRedux.Managers
                     string saveName = split[1].Trim();
                     if (saveName.Contains("."))
                     {
-                        throw new Exception($"Attempted to use '.' while saving local variable in ability: {ability.Name}.\nI literally told you not to use '.' when saving local variables...");
+                        throw new Exception($"Attempted to use '.' while saving local variable.\nI literally told you not to use '.' when saving local variables...");
                     }
                     string expression = split[0].Trim();
                     var val = EvaluateMath(main, localValues, expression);

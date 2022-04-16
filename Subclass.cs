@@ -1,4 +1,5 @@
 ﻿using AdvancedSubclassingRedux.Managers;
+using Exiled.API.Enums;
 using Exiled.API.Features;
 using MEC;
 using System;
@@ -22,10 +23,18 @@ namespace AdvancedSubclassingRedux
         public Dictionary<string, int> IntOptions { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, float> FloatOptions { get; set; } = new Dictionary<string, float>();
 
+        public List<Dictionary<ItemType, float>> SpawnItems { get; set; } = new List<Dictionary<ItemType, float>>();
+        public Dictionary<AmmoType, ushort> SpawnAmmo { get; set; } = new Dictionary<AmmoType, ushort>();
+
         public List<string> Abilities { get; set; } = new List<string>();
         public List<Ability> AbilitiesList { get; set; } = new List<Ability>();
 
         public Dictionary<string, double> AbilityCooldowns { get; set; } = new Dictionary<string, double>();
+        public Dictionary<string, double> InitialAbilityCooldowns { get; set; } = new Dictionary<string, double>();
+        
+        public List<Dictionary<string, object>> OnGiven { get; set; } = new List<Dictionary<string, object>>();
+
+        public List<Dictionary<string, object>> OnRemoved { get; set; } = new List<Dictionary<string, object>>();        
 
         public void Unload()
         {
@@ -46,12 +55,20 @@ namespace AdvancedSubclassingRedux
             {
                 subclassBehaviour.Destroy();
             }
+
+            if (OnRemoved != null && OnRemoved.Count > 0)
+            {
+                Timing.RunCoroutine(Helpers.Eval(typeof(SubclassOnData), new SubclassOnData(player, this), OnRemoved));
+            }
+
+            Tracking.PlayersWithClasses.Remove(player);
+            Tracking.PlayerAbilityCooldowns.Remove(player);
         }
 
         public void OnGive(Player player)
         {
             Tracking.PlayerSnapshots.Add(player, new PlayerSnapshot(player));
-            Tracking.PlayerLastUsedAbilities.Add(player, new Dictionary<Ability, DateTime>());
+            Tracking.PlayerAbilityCooldowns.Add(player, new Dictionary<Ability, DateTime>());
             if (StringOptions.TryGetValue("GotClassMessage", out string classMessage))
             {
                 player.Broadcast(IntOptions.TryGetValue("GotClassMessageDuration", out int duration) ? (ushort)duration : (ushort)5, classMessage, Broadcast.BroadcastFlags.Normal);
@@ -63,6 +80,16 @@ namespace AdvancedSubclassingRedux
                     Cassie.MessageTranslated(cassieMessage, cassieSubtitles);
                 else
                     Cassie.Message(cassieMessage);
+            }
+
+            if (InitialAbilityCooldowns != null)
+            {
+                foreach (KeyValuePair<string, double> ability in InitialAbilityCooldowns)
+                {
+                    Ability abilityValue = Ability.Get(ability.Key);
+                    if (abilityValue == null) continue;
+                    Tracking.PlayerAbilityCooldowns[player][abilityValue] = DateTime.Now.AddSeconds(ability.Value);
+                }
             }
 
             bool giveBehaviour = false;
@@ -77,10 +104,14 @@ namespace AdvancedSubclassingRedux
 
             if (giveBehaviour)
             {
-                Log.Info("Giving behaviour");
                 player.GameObject.AddComponent<SubclassBehaviour>();
             }
 
+            if (OnGiven != null && OnGiven.Count > 0)
+            {
+                Timing.RunCoroutine(Helpers.Eval(typeof(SubclassOnData), new SubclassOnData(player, this), OnGiven));
+            }
+                
             Timing.CallDelayed(0.3f, () =>
             {
                 if (IntOptions.TryGetValue("MaxHealth", out int maxHealth))
@@ -102,7 +133,50 @@ namespace AdvancedSubclassingRedux
                 {
                     player.ArtificialHealth = armorOnSpawn;
                 }
+
+                if (SpawnItems != null && SpawnItems.Count > 0)
+                {
+                    foreach (Dictionary<ItemType, float> possibleItems in SpawnItems)
+                    {
+                        float chanceSoFar = 0;
+                        foreach (KeyValuePair<ItemType, float> item in possibleItems)
+                        {
+                            if (item.Value + chanceSoFar >= UnityEngine.Random.Range(0f, 100f))
+                            {
+                                if (item.Key == ItemType.None) break;
+                                player.AddItem(item.Key);
+                                break;
+                            }
+                            chanceSoFar += item.Value;
+                        }
+                    }
+                }
+                
+                if (SpawnAmmo != null)
+                {
+                    foreach (KeyValuePair<AmmoType, ushort> ammo in SpawnAmmo)
+                    {
+                        if (ammo.Value >= 0)
+                        {
+                            player.SetAmmo(ammo.Key, ammo.Value);
+                        }
+                    }
+                }
+
             });
+        }
+    }
+
+    public class SubclassOnData
+    {
+        public Player Player { get; set; }
+
+        public Subclass Subclass { get; set; }
+
+        public SubclassOnData(Player player, Subclass subclass)
+        {
+            Player = player;
+            Subclass = subclass;
         }
     }
 
@@ -129,7 +203,7 @@ namespace AdvancedSubclassingRedux
             {
                 foreach (Ability ability in Abilities)
                 {
-                    Timing.RunCoroutine(Helpers.Eval(ability, this.GetType(), this, ability.Update));
+                    Timing.RunCoroutine(Helpers.Eval(this.GetType(), this, ability.Update));
                 }
             }
         }

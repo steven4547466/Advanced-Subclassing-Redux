@@ -199,7 +199,7 @@ namespace AdvancedSubclassingRedux.Managers
                     if (!ability.Use(player))
                         return;
 
-                    Timing.RunCoroutine(Helpers.Eval(ability, type, eventArgs, ability.Events[eventName]));
+                    Timing.RunCoroutine(Helpers.Eval(type, eventArgs, ability.Events[eventName]));
                 }
             }
         }

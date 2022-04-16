@@ -18,6 +18,13 @@ namespace AdvancedSubclassingRedux
 
         public List<EventInfo> EventInfos { get; set; } = new List<EventInfo>();
 
+        public static Ability Get(string name)
+        {
+            if (AbilityManager.Abilities.TryGetValue(name, out Ability ability))
+                return ability;
+            return null;
+        }
+        
         public bool Use(Player player)
         {
             if (Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass))
@@ -26,23 +33,23 @@ namespace AdvancedSubclassingRedux
                 {
                     if (!subclass.AbilityCooldowns.TryGetValue(Name, out double cooldown))
                         return true;
-                    if (Tracking.PlayerLastUsedAbilities[player].TryGetValue(this, out DateTime lastUsed))
+                    if (Tracking.PlayerAbilityCooldowns[player].TryGetValue(this, out DateTime nextAvilable))
                     {
-                        TimeSpan time = DateTime.Now - lastUsed;
-                        if (time < TimeSpan.FromSeconds(cooldown))
+                        TimeSpan time = nextAvilable - DateTime.Now;
+                        if (time > TimeSpan.FromSeconds(0))
                         {
                             if (subclass.StringOptions.TryGetValue("AbilityOnCooldownMessage", out string message))
                             {
-                                player.Broadcast(3, message.Replace("{ability}", Name).Replace("{cooldown}", (cooldown - time.TotalSeconds).ToString("0.0")), Broadcast.BroadcastFlags.Normal, true);
+                                player.Broadcast(3, message.Replace("{ability}", Name).Replace("{cooldown}", (time.TotalSeconds).ToString("0.0")), Broadcast.BroadcastFlags.Normal, true);
                             }
                             return false;
                         }
-                        Tracking.PlayerLastUsedAbilities[player][this] = DateTime.Now;
+                        Tracking.PlayerAbilityCooldowns[player][this] = DateTime.Now.AddSeconds(cooldown);
                         return true;
                     }
                     else
                     {
-                        Tracking.PlayerLastUsedAbilities[player][this] = DateTime.Now;
+                        Tracking.PlayerAbilityCooldowns[player][this] = DateTime.Now.AddSeconds(cooldown);
                         return true;
                     }
                 }
