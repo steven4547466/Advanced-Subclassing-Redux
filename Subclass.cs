@@ -91,14 +91,6 @@ namespace AdvancedSubclassingRedux
                     Cassie.Message(cassieMessage);
             }
 
-            if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
-            {
-                if (removeDefaultSpawnItems)
-                {
-                    player.ClearInventory();
-                }
-            }
-
             if (InitialAbilityCooldowns != null)
             {
                 foreach (KeyValuePair<string, double> ability in InitialAbilityCooldowns)
@@ -172,6 +164,14 @@ namespace AdvancedSubclassingRedux
                 if (IntOptions.TryGetValue("ArmorOnSpawn", out int armorOnSpawn))
                 {
                     player.ArtificialHealth = armorOnSpawn;
+                }
+
+                if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
+                {
+                    if (removeDefaultSpawnItems)
+                    {
+                        player.ClearInventory();
+                    }
                 }
 
                 if (SpawnItems != null && SpawnItems.Count > 0)
