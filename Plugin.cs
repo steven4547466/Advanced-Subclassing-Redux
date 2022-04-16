@@ -32,6 +32,8 @@ namespace AdvancedSubclassingRedux
 
             ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
 
+            Server.IsHeavilyModded = true;
+
             base.OnEnabled();
         }
 

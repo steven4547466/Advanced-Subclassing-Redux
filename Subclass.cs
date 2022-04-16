@@ -204,6 +204,14 @@ namespace AdvancedSubclassingRedux
                     }
                 }
 
+                Vector3 scale = new Vector3(player.Scale.x, player.Scale.y, player.Scale.z);
+
+                if (FloatOptions.TryGetValue("ScaleX", out float scaleX)) scale.x = scaleX;
+                if (FloatOptions.TryGetValue("ScaleY", out float scaleY)) scale.y = scaleY;
+                if (FloatOptions.TryGetValue("ScaleZ", out float scaleZ)) scale.z = scaleZ;
+
+                player.Scale = scale;
+
             });
         }
     }
