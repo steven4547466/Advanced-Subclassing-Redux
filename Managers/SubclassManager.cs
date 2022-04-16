@@ -27,7 +27,7 @@ namespace AdvancedSubclassingRedux.Managers
                 classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", "global", "classes")));
                 foreach (string directory in Directory.GetDirectories(Path.Combine(Paths.Configs, "Subclasses", "global", "classes")))
                 {
-                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", "global", "classes", directory)));
+                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", "global", "classes", directory), "*.yml"));
                 }
             }
             else
@@ -40,7 +40,7 @@ namespace AdvancedSubclassingRedux.Managers
                 classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "classes")));
                 foreach (string directory in Directory.GetDirectories(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "classes")))
                 {
-                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "classes", directory)));
+                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "classes", directory), "*.yml"));
                 }
             }
             else

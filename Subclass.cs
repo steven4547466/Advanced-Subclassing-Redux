@@ -25,16 +25,17 @@ namespace AdvancedSubclassingRedux
 
         public List<Dictionary<ItemType, float>> SpawnItems { get; set; } = new List<Dictionary<ItemType, float>>();
         public Dictionary<AmmoType, ushort> SpawnAmmo { get; set; } = new Dictionary<AmmoType, ushort>();
+        public Dictionary<RoomType, float> SpawnLocations { get; set; } = new Dictionary<RoomType, float>();
 
         public List<string> Abilities { get; set; } = new List<string>();
         public List<Ability> AbilitiesList { get; set; } = new List<Ability>();
 
         public Dictionary<string, double> AbilityCooldowns { get; set; } = new Dictionary<string, double>();
         public Dictionary<string, double> InitialAbilityCooldowns { get; set; } = new Dictionary<string, double>();
-        
+
         public List<Dictionary<string, object>> OnGiven { get; set; } = new List<Dictionary<string, object>>();
 
-        public List<Dictionary<string, object>> OnRemoved { get; set; } = new List<Dictionary<string, object>>();        
+        public List<Dictionary<string, object>> OnRemoved { get; set; } = new List<Dictionary<string, object>>();
 
         public void Unload()
         {
@@ -54,6 +55,14 @@ namespace AdvancedSubclassingRedux
             if (player.GameObject.TryGetComponent(out SubclassBehaviour subclassBehaviour))
             {
                 subclassBehaviour.Destroy();
+            }
+
+            if (StringOptions.TryGetValue("CassieDeathMessage", out string cassieMessage))
+            {
+                if (StringOptions.TryGetValue("CassieDeathMessageSubtitles", out string cassieSubtitles))
+                    Cassie.MessageTranslated(cassieMessage, cassieSubtitles);
+                else
+                    Cassie.Message(cassieMessage);
             }
 
             if (OnRemoved != null && OnRemoved.Count > 0)
@@ -80,6 +89,14 @@ namespace AdvancedSubclassingRedux
                     Cassie.MessageTranslated(cassieMessage, cassieSubtitles);
                 else
                     Cassie.Message(cassieMessage);
+            }
+
+            if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
+            {
+                if (removeDefaultSpawnItems)
+                {
+                    player.ClearInventory();
+                }
             }
 
             if (InitialAbilityCooldowns != null)
@@ -111,8 +128,31 @@ namespace AdvancedSubclassingRedux
             {
                 Timing.RunCoroutine(Helpers.Eval(typeof(SubclassOnData), new SubclassOnData(player, this), OnGiven));
             }
-                
-            Timing.CallDelayed(0.3f, () =>
+
+            Timing.CallDelayed(0.4f, () =>
+            {
+                if (SpawnLocations != null && SpawnLocations.Count > 0)
+                {
+                    float chanceSoFar = 0;
+                    float rng = UnityEngine.Random.Range(0f, 100f);
+                    foreach (KeyValuePair<RoomType, float> possibleRoom in SpawnLocations)
+                    {
+                        if (possibleRoom.Value + chanceSoFar >= rng)
+                        {
+                            if (possibleRoom.Key == RoomType.Unknown) break;
+                            Vector3 pos = player.Position;
+                            Room room = Room.List.FirstOrDefault(r => r.Type == possibleRoom.Key);
+                            if (room != null)
+                                pos = room.Position + Vector3.up * 3;
+                            player.Position = pos;
+                            break;
+                        }
+                        chanceSoFar += possibleRoom.Value;
+                    }
+                }
+            });
+
+            Timing.CallDelayed(0.1f, () =>
             {
                 if (IntOptions.TryGetValue("MaxHealth", out int maxHealth))
                 {
@@ -139,9 +179,10 @@ namespace AdvancedSubclassingRedux
                     foreach (Dictionary<ItemType, float> possibleItems in SpawnItems)
                     {
                         float chanceSoFar = 0;
+                        float rng = UnityEngine.Random.Range(0f, 100f);
                         foreach (KeyValuePair<ItemType, float> item in possibleItems)
                         {
-                            if (item.Value + chanceSoFar >= UnityEngine.Random.Range(0f, 100f))
+                            if (item.Value + chanceSoFar >= rng)
                             {
                                 if (item.Key == ItemType.None) break;
                                 player.AddItem(item.Key);
@@ -151,7 +192,7 @@ namespace AdvancedSubclassingRedux
                         }
                     }
                 }
-                
+
                 if (SpawnAmmo != null)
                 {
                     foreach (KeyValuePair<AmmoType, ushort> ammo in SpawnAmmo)

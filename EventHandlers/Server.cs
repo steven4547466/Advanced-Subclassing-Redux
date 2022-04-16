@@ -11,6 +11,7 @@
 
             Tracking.PlayersWithClasses.Clear();
             Tracking.PlayerAbilityCooldowns.Clear();
+            Tracking.CassieSkips.Clear();
         }
     }
 }

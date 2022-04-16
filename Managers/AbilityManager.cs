@@ -38,7 +38,7 @@ namespace AdvancedSubclassingRedux.Managers
                             hasCheck = true;
                             string propToCheckString = (string)check;
                             string[] split = propToCheckString.Split(new string[] { " is ", " != ", " == " }, StringSplitOptions.None);
-                            
+
                             // Handle getting the player and ensuring they have a subclass with the ability.
                             if (split.Length == 1)
                             {
@@ -156,7 +156,7 @@ namespace AdvancedSubclassingRedux.Managers
                                                 skip = true;
                                                 break;
                                             }
-                                        } 
+                                        }
                                         else
                                         {
                                             if (value == null)
@@ -165,7 +165,7 @@ namespace AdvancedSubclassingRedux.Managers
                                                 break;
                                             }
                                         }
-                                        
+
                                     }
                                     else if (propToCheckString.Contains(" == "))
                                     {
@@ -231,7 +231,7 @@ namespace AdvancedSubclassingRedux.Managers
                 classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", "global", "abilities")));
                 foreach (string directory in Directory.GetDirectories(Path.Combine(Paths.Configs, "Subclasses", "global", "abilities")))
                 {
-                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", "global", "abilities", directory)));
+                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", "global", "abilities", directory), "*.yml"));
                 }
             }
             else
@@ -244,7 +244,7 @@ namespace AdvancedSubclassingRedux.Managers
                 classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "abilities")));
                 foreach (string directory in Directory.GetDirectories(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "abilities")))
                 {
-                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "abilities", directory)));
+                    classPaths.AddRange(Directory.GetFiles(Path.Combine(Paths.Configs, "Subclasses", Server.Port.ToString(), "abilities", directory), "*.yml"));
                 }
             }
             else

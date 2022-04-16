@@ -115,6 +115,7 @@
     <Compile Include="Managers\AbilityManager.cs" />
     <Compile Include="Managers\Helpers.cs" />
     <Compile Include="Managers\SubclassManager.cs" />
+    <Compile Include="Patches\AnnounceScpTerminationPatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Subclass.cs" />

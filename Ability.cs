@@ -24,7 +24,7 @@ namespace AdvancedSubclassingRedux
                 return ability;
             return null;
         }
-        
+
         public bool Use(Player player)
         {
             if (Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass))
