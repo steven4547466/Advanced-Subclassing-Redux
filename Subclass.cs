@@ -123,7 +123,11 @@ namespace AdvancedSubclassingRedux
 
             Timing.CallDelayed(0.4f, () =>
             {
-                if (SpawnLocations != null && SpawnLocations.Count > 0)
+                if (FloatOptions.TryGetValue("SpawnLocationX", out float spawnX) && FloatOptions.TryGetValue("SpawnLocationY", out float spawnY) && FloatOptions.TryGetValue("SpawnLocationZ", out float spawnZ))
+                {
+                    player.Position = new Vector3(spawnX, spawnY, spawnZ);
+                } 
+                else if (SpawnLocations != null && SpawnLocations.Count > 0)
                 {
                     float chanceSoFar = 0;
                     float rng = UnityEngine.Random.Range(0f, 100f);
@@ -146,6 +150,25 @@ namespace AdvancedSubclassingRedux
 
             Timing.CallDelayed(0.1f, () =>
             {
+                if (StringOptions.TryGetValue("Badge", out string badge))
+                {
+                    player.RankName = badge;
+                    if (StringOptions.TryGetValue("BadgeColor", out string badgeColor))
+                    {
+                        player.RankColor = badgeColor;
+                    }
+                }
+
+                if (StringOptions.TryGetValue("Nickname", out string nickname))
+                {
+                    player.DisplayNickname = nickname.Replace("{name}", player.Nickname);
+                }
+
+                if (StringOptions.TryGetValue("HelpMessage", out string helpMessage))
+                {
+                    player.SendConsoleMessage(helpMessage, "white");
+                }
+
                 if (IntOptions.TryGetValue("MaxHealth", out int maxHealth))
                 {
                     player.MaxHealth = maxHealth;
@@ -156,14 +179,14 @@ namespace AdvancedSubclassingRedux
                     player.Health = healthOnSpawn;
                 }
 
-                if (IntOptions.TryGetValue("MaxArmor", out int maxArmor))
-                {
-                    player.MaxArtificialHealth = maxArmor;
-                }
-
                 if (IntOptions.TryGetValue("ArmorOnSpawn", out int armorOnSpawn))
                 {
-                    player.ArtificialHealth = armorOnSpawn;
+                    int maxArmor = IntOptions.ContainsKey("MaxArmor") ? IntOptions["MaxArmor"] : (int)player.MaxArtificialHealth;
+                    float armorDecay = FloatOptions.ContainsKey("ArmorDecay") ? FloatOptions["ArmorDecay"] : 1.2f;
+                    float armorEfficacy = FloatOptions.ContainsKey("ArmorEfficacy") ? FloatOptions["ArmorEfficacy"] : 0.7f;
+                    float armorSustain = FloatOptions.ContainsKey("ArmorSustain") ? FloatOptions["ArmorSustain"] : 0f;
+                    bool persistent = BoolOptions.ContainsKey("ArmorPersists") ? BoolOptions["ArmorPersists"] : false;
+                    player.AddAhp(armorOnSpawn, maxArmor, armorDecay, armorEfficacy, armorSustain, persistent);
                 }
 
                 if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
