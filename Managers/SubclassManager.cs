@@ -2,6 +2,7 @@
 using Exiled.Events.EventArgs;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace AdvancedSubclassingRedux.Managers
@@ -149,6 +150,26 @@ namespace AdvancedSubclassingRedux.Managers
                 {
                     if (rng <= potentialClass.AffectsRoles[ev.NewRole])
                     {
+                        if (potentialClass.IntOptions.TryGetValue("MaxSpawnPerRound", out int maxPerRound))
+                        {
+                            if (maxPerRound <= 0 || (Tracking.SubclassesGiven.TryGetValue(potentialClass, out int numGiven) && numGiven >= maxPerRound))
+                                continue;
+                        }
+
+                        if (potentialClass.IntOptions.TryGetValue("MaxAlive", out int maxAlive))
+                        {
+                            int playersWithThisSubclass = 0;
+                            
+                            foreach (Subclass subclass in Tracking.PlayersWithClasses.Values)
+                            {
+                                if (subclass == potentialClass)
+                                    playersWithThisSubclass++;
+                            }
+                            
+                            if (playersWithThisSubclass >= maxAlive)
+                                continue;
+                        }
+
                         GiveClass(player, potentialClass);
                         break;
                     }

@@ -33,6 +33,8 @@ namespace AdvancedSubclassingRedux
         public Dictionary<string, double> AbilityCooldowns { get; set; } = new Dictionary<string, double>();
         public Dictionary<string, double> InitialAbilityCooldowns { get; set; } = new Dictionary<string, double>();
 
+        public Dictionary<string, int> MaxAbilityUses { get; set; } = new Dictionary<string, int>();
+
         public List<Dictionary<string, object>> OnGiven { get; set; } = new List<Dictionary<string, object>>();
 
         public List<Dictionary<string, object>> OnRemoved { get; set; } = new List<Dictionary<string, object>>();
@@ -78,6 +80,12 @@ namespace AdvancedSubclassingRedux
         {
             Tracking.PlayerSnapshots.Add(player, new PlayerSnapshot(player));
             Tracking.PlayerAbilityCooldowns.Add(player, new Dictionary<Ability, DateTime>());
+            
+            if (!Tracking.SubclassesGiven.ContainsKey(this))
+                Tracking.SubclassesGiven.Add(this, 1);
+            else
+                Tracking.SubclassesGiven[this]++;
+
             if (StringOptions.TryGetValue("GotClassMessage", out string classMessage))
             {
                 player.Broadcast(IntOptions.TryGetValue("GotClassMessageDuration", out int duration) ? (ushort)duration : (ushort)5, classMessage, Broadcast.BroadcastFlags.Normal);

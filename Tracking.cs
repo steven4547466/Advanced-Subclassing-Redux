@@ -10,5 +10,7 @@ namespace AdvancedSubclassingRedux
         public static Dictionary<Player, Subclass> PlayersWithClasses = new Dictionary<Player, Subclass>();
         public static Dictionary<Player, PlayerSnapshot> PlayerSnapshots = new Dictionary<Player, PlayerSnapshot>();
         public static Dictionary<Player, Dictionary<Ability, DateTime>> PlayerAbilityCooldowns = new Dictionary<Player, Dictionary<Ability, DateTime>>();
+        public static Dictionary<Player, Dictionary<Ability, int>> PlayerAbilityUses = new Dictionary<Player, Dictionary<Ability, int>>();
+        public static Dictionary<Subclass, int> SubclassesGiven = new Dictionary<Subclass, int>();
     }
 }

@@ -31,8 +31,44 @@ namespace AdvancedSubclassingRedux
             {
                 if (subclass.AbilitiesList.Contains(this))
                 {
+                    bool hasMax = false;
+                    if (subclass.MaxAbilityUses.TryGetValue(Name, out int maxUses))
+                    {
+                        if (maxUses <= 0) return false;
+                        hasMax = true;
+                        if (Tracking.PlayerAbilityUses.TryGetValue(player, out Dictionary<Ability, int> abilityUses))
+                        {
+                            if (abilityUses.TryGetValue(this, out int uses))
+                            {
+                                if (maxUses >= uses)
+                                {
+                                    if (subclass.StringOptions.TryGetValue("OutOfAbilityUses", out string message))
+                                    {
+                                        player.Broadcast(3, message.Replace("{ability}", Name), Broadcast.BroadcastFlags.Normal, true);
+                                    }
+                                    return false;
+                                }
+                            } 
+                            else
+                            {
+                                abilityUses.Add(this, 0);
+                            }
+                        } 
+                        else
+                        {
+                            Dictionary<Ability, int> dict = new Dictionary<Ability, int>();
+                            dict.Add(this, 0);
+                            Tracking.PlayerAbilityUses.Add(player, dict);
+                        }
+                    }
+                    
                     if (!subclass.AbilityCooldowns.TryGetValue(Name, out double cooldown))
+                    {
+                        if (hasMax)
+                            Tracking.PlayerAbilityUses[player][this]++;
                         return true;
+                    }
+                    
                     if (Tracking.PlayerAbilityCooldowns[player].TryGetValue(this, out DateTime nextAvilable))
                     {
                         TimeSpan time = nextAvilable - DateTime.Now;
@@ -45,11 +81,15 @@ namespace AdvancedSubclassingRedux
                             return false;
                         }
                         Tracking.PlayerAbilityCooldowns[player][this] = DateTime.Now.AddSeconds(cooldown);
+                        if (hasMax)
+                            Tracking.PlayerAbilityUses[player][this]++;
                         return true;
                     }
                     else
                     {
                         Tracking.PlayerAbilityCooldowns[player][this] = DateTime.Now.AddSeconds(cooldown);
+                        if (hasMax)
+                            Tracking.PlayerAbilityUses[player][this]++;
                         return true;
                     }
                 }

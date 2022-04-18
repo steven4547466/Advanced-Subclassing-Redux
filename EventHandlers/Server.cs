@@ -10,7 +10,10 @@
             }
 
             Tracking.PlayersWithClasses.Clear();
+            Tracking.PlayerSnapshots.Clear();
             Tracking.PlayerAbilityCooldowns.Clear();
+            Tracking.PlayerAbilityUses.Clear();
+            Tracking.SubclassesGiven.Clear();
         }
     }
 }
