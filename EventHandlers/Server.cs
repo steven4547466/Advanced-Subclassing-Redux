@@ -14,6 +14,9 @@
             Tracking.PlayerAbilityCooldowns.Clear();
             Tracking.PlayerAbilityUses.Clear();
             Tracking.SubclassesGiven.Clear();
+
+
+            Patches.RoleChanged.Cooldowns.Clear();
         }
     }
 }

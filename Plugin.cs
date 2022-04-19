@@ -28,8 +28,6 @@ namespace AdvancedSubclassingRedux
             AbilityManager.ReloadAbilities();
             SubclassManager.ReloadSubclasses();
 
-            PlayerEvents.ChangingRole += EventHandlers.Player.OnChangingRole;
-
             ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
 
             Server.IsHeavilyModded = true;
@@ -39,8 +37,6 @@ namespace AdvancedSubclassingRedux
 
         public override void OnDisabled()
         {
-            PlayerEvents.ChangingRole -= EventHandlers.Player.OnChangingRole;
-
             ServerEvents.RestartingRound -= EventHandlers.Server.OnRestartingRound;
 
             Harmony.UnpatchAll(Harmony.Id);
