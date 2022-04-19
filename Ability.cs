@@ -48,12 +48,12 @@ namespace AdvancedSubclassingRedux
                                     }
                                     return false;
                                 }
-                            } 
+                            }
                             else
                             {
                                 abilityUses.Add(this, 0);
                             }
-                        } 
+                        }
                         else
                         {
                             Dictionary<Ability, int> dict = new Dictionary<Ability, int>();
@@ -61,14 +61,14 @@ namespace AdvancedSubclassingRedux
                             Tracking.PlayerAbilityUses.Add(player, dict);
                         }
                     }
-                    
+
                     if (!subclass.AbilityCooldowns.TryGetValue(Name, out double cooldown))
                     {
                         if (hasMax)
                             Tracking.PlayerAbilityUses[player][this]++;
                         return true;
                     }
-                    
+
                     if (Tracking.PlayerAbilityCooldowns[player].TryGetValue(this, out DateTime nextAvilable))
                     {
                         TimeSpan time = nextAvilable - DateTime.Now;

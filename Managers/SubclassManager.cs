@@ -1,5 +1,4 @@
 ﻿using Exiled.API.Features;
-using Exiled.Events.EventArgs;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -158,13 +157,13 @@ namespace AdvancedSubclassingRedux.Managers
                         if (potentialClass.IntOptions.TryGetValue("MaxAlive", out int maxAlive))
                         {
                             int playersWithThisSubclass = 0;
-                            
+
                             foreach (Subclass subclass in Tracking.PlayersWithClasses.Values)
                             {
                                 if (subclass == potentialClass)
                                     playersWithThisSubclass++;
                             }
-                            
+
                             if (playersWithThisSubclass >= maxAlive)
                                 continue;
                         }

@@ -2,7 +2,6 @@
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using MEC;
-using PlayableScps;
 using PlayableScps.Interfaces;
 using PlayerStatsSystem;
 using System;

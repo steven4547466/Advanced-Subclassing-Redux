@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AdvancedSubclassingRedux.Managers;
+﻿using AdvancedSubclassingRedux.Managers;
 using Exiled.API.Features;
 using HarmonyLib;
+using System;
+using System.Collections.Generic;
 
 namespace AdvancedSubclassingRedux.Patches
 {
@@ -21,12 +18,12 @@ namespace AdvancedSubclassingRedux.Patches
                 if (cooldown > DateTime.Now)
                     return;
                 Cooldowns[player] = DateTime.Now.AddSeconds(0.5);
-            } 
+            }
             else
             {
                 Cooldowns.Add(player, DateTime.Now.AddSeconds(0.5));
             }
-            
+
             SubclassManager.MaybeAddClasses(player);
         }
     }
