@@ -159,6 +159,45 @@ namespace AdvancedSubclassingRedux
                         chanceSoFar += possibleRoom.Value;
                     }
                 }
+
+                if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
+                {
+                    if (removeDefaultSpawnItems)
+                    {
+                        player.ClearInventory();
+                    }
+                }
+
+                if (SpawnItems != null && SpawnItems.Count > 0)
+                {
+                    foreach (Dictionary<ItemType, float> possibleItems in SpawnItems)
+                    {
+                        float chanceSoFar = 0;
+                        float rng = UnityEngine.Random.Range(0f, 100f);
+                        foreach (KeyValuePair<ItemType, float> item in possibleItems)
+                        {
+                            if (item.Value + chanceSoFar >= rng)
+                            {
+                                if (item.Key == ItemType.None) break;
+                                player.AddItem(item.Key);
+                                break;
+                            }
+                            chanceSoFar += item.Value;
+                        }
+                    }
+                }
+
+                if (SpawnAmmo != null)
+                {
+                    foreach (KeyValuePair<AmmoType, ushort> ammo in SpawnAmmo)
+                    {
+                        if (ammo.Value >= 0)
+                        {
+                            player.SetAmmo(ammo.Key, ammo.Value);
+                        }
+                    }
+                }
+
             });
 
             if (IntOptions.TryGetValue("ArmorOnSpawn", out int armorOnSpawn))
@@ -225,44 +264,6 @@ namespace AdvancedSubclassingRedux
             if (IntOptions.TryGetValue("HealthOnSpawn", out int healthOnSpawn))
             {
                 player.Health = healthOnSpawn;
-            }
-
-            if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
-            {
-                if (removeDefaultSpawnItems)
-                {
-                    player.ClearInventory();
-                }
-            }
-
-            if (SpawnItems != null && SpawnItems.Count > 0)
-            {
-                foreach (Dictionary<ItemType, float> possibleItems in SpawnItems)
-                {
-                    float chanceSoFar = 0;
-                    float rng = UnityEngine.Random.Range(0f, 100f);
-                    foreach (KeyValuePair<ItemType, float> item in possibleItems)
-                    {
-                        if (item.Value + chanceSoFar >= rng)
-                        {
-                            if (item.Key == ItemType.None) break;
-                            player.AddItem(item.Key);
-                            break;
-                        }
-                        chanceSoFar += item.Value;
-                    }
-                }
-            }
-
-            if (SpawnAmmo != null)
-            {
-                foreach (KeyValuePair<AmmoType, ushort> ammo in SpawnAmmo)
-                {
-                    if (ammo.Value >= 0)
-                    {
-                        player.SetAmmo(ammo.Key, ammo.Value);
-                    }
-                }
             }
 
             Vector3 scale = new Vector3(player.Scale.x, player.Scale.y, player.Scale.z);
