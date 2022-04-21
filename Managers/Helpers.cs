@@ -211,6 +211,7 @@ namespace AdvancedSubclassingRedux.Managers
                 {
                     if (((string)value).Contains("."))
                     {
+                        Log.Error("Attempted to use '.' while saving local variable.\nI literally told you not to use '.' when saving local variables...");
                         throw new Exception($"Attempted to use '.' while saving local variable.\nI literally told you not to use '.' when saving local variables...");
                     }
                     string valName = name.Substring(4);
@@ -223,6 +224,7 @@ namespace AdvancedSubclassingRedux.Managers
                     string saveName = split[1].Trim();
                     if (saveName.Contains("."))
                     {
+                        Log.Error("Attempted to use '.' while saving local variable.\nI literally told you not to use '.' when saving local variables...");
                         throw new Exception($"Attempted to use '.' while saving local variable.\nI literally told you not to use '.' when saving local variables...");
                     }
                     string expression = split[0].Trim();

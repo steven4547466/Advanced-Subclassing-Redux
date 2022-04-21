@@ -53,6 +53,7 @@ namespace AdvancedSubclassingRedux
             {
                 player.RankName = snapshot.Badge;
                 player.RankColor = snapshot.BadgeColor;
+                player.BadgeHidden = snapshot.BadgeHidden;
                 player.DisplayNickname = snapshot.Nickname;
                 Tracking.PlayerSnapshots.Remove(player);
             }
@@ -134,111 +135,105 @@ namespace AdvancedSubclassingRedux
                 Timing.RunCoroutine(Helpers.Eval(typeof(SubclassOnData), new SubclassOnData(player, this), OnGiven));
             }
 
-            Timing.CallDelayed(0.3f, () =>
+            if (FloatOptions.TryGetValue("SpawnLocationX", out float spawnX) && FloatOptions.TryGetValue("SpawnLocationY", out float spawnY) && FloatOptions.TryGetValue("SpawnLocationZ", out float spawnZ))
             {
-                if (FloatOptions.TryGetValue("SpawnLocationX", out float spawnX) && FloatOptions.TryGetValue("SpawnLocationY", out float spawnY) && FloatOptions.TryGetValue("SpawnLocationZ", out float spawnZ))
+                player.Position = new Vector3(spawnX, spawnY, spawnZ);
+            }
+            else if (SpawnLocations != null && SpawnLocations.Count > 0)
+            {
+                float chanceSoFar = 0;
+                float rng = UnityEngine.Random.Range(0f, 100f);
+                foreach (KeyValuePair<RoomType, float> possibleRoom in SpawnLocations)
                 {
-                    player.Position = new Vector3(spawnX, spawnY, spawnZ);
+                    if (possibleRoom.Value + chanceSoFar >= rng)
+                    {
+                        if (possibleRoom.Key == RoomType.Unknown) break;
+                        Vector3 pos = player.Position;
+                        Room room = Room.List.FirstOrDefault(r => r.Type == possibleRoom.Key);
+                        if (room != null)
+                            pos = room.Position + Vector3.up * 3;
+                        player.Position = pos;
+                        break;
+                    }
+                    chanceSoFar += possibleRoom.Value;
                 }
-                else if (SpawnLocations != null && SpawnLocations.Count > 0)
+            }
+
+            if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
+            {
+                if (removeDefaultSpawnItems)
+                {
+                    player.ClearInventory();
+                }
+            }
+
+            if (SpawnItems != null && SpawnItems.Count > 0)
+            {
+                foreach (Dictionary<ItemType, float> possibleItems in SpawnItems)
                 {
                     float chanceSoFar = 0;
                     float rng = UnityEngine.Random.Range(0f, 100f);
-                    foreach (KeyValuePair<RoomType, float> possibleRoom in SpawnLocations)
+                    foreach (KeyValuePair<ItemType, float> item in possibleItems)
                     {
-                        if (possibleRoom.Value + chanceSoFar >= rng)
+                        if (item.Value + chanceSoFar >= rng)
                         {
-                            if (possibleRoom.Key == RoomType.Unknown) break;
-                            Vector3 pos = player.Position;
-                            Room room = Room.List.FirstOrDefault(r => r.Type == possibleRoom.Key);
-                            if (room != null)
-                                pos = room.Position + Vector3.up * 3;
-                            player.Position = pos;
+                            if (item.Key == ItemType.None) break;
+                            player.AddItem(item.Key);
                             break;
                         }
-                        chanceSoFar += possibleRoom.Value;
+                        chanceSoFar += item.Value;
                     }
                 }
+            }
 
-                if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
+            if (SpawnAmmo != null)
+            {
+                foreach (KeyValuePair<AmmoType, ushort> ammo in SpawnAmmo)
                 {
-                    if (removeDefaultSpawnItems)
+                    if (ammo.Value >= 0)
                     {
-                        player.ClearInventory();
+                        player.SetAmmo(ammo.Key, ammo.Value);
                     }
                 }
-
-                if (SpawnItems != null && SpawnItems.Count > 0)
-                {
-                    foreach (Dictionary<ItemType, float> possibleItems in SpawnItems)
-                    {
-                        float chanceSoFar = 0;
-                        float rng = UnityEngine.Random.Range(0f, 100f);
-                        foreach (KeyValuePair<ItemType, float> item in possibleItems)
-                        {
-                            if (item.Value + chanceSoFar >= rng)
-                            {
-                                if (item.Key == ItemType.None) break;
-                                player.AddItem(item.Key);
-                                break;
-                            }
-                            chanceSoFar += item.Value;
-                        }
-                    }
-                }
-
-                if (SpawnAmmo != null)
-                {
-                    foreach (KeyValuePair<AmmoType, ushort> ammo in SpawnAmmo)
-                    {
-                        if (ammo.Value >= 0)
-                        {
-                            player.SetAmmo(ammo.Key, ammo.Value);
-                        }
-                    }
-                }
-
-            });
+            }
 
             if (IntOptions.TryGetValue("ArmorOnSpawn", out int armorOnSpawn))
             {
                 var module = player.ReferenceHub.playerStats.GetModule<AhpStat>();
-                Timing.CallDelayed(1.5f, () =>
+                if (player.CurrentScp is IShielded shielded)
                 {
-                    if (player.CurrentScp is IShielded shielded)
+                    var shield = shielded.Shield;
+                    int maxArmor = IntOptions.ContainsKey("MaxArmor") ? IntOptions["MaxArmor"] : (int)player.MaxArtificialHealth;
+                    float armorDecay = FloatOptions.ContainsKey("ArmorDecay") ? FloatOptions["ArmorDecay"] : 1.2f;
+                    float armorEfficacy = FloatOptions.ContainsKey("ArmorEfficacy") ? FloatOptions["ArmorEfficacy"] : 0.7f;
+                    float armorSustain = FloatOptions.ContainsKey("ArmorSustain") ? FloatOptions["ArmorSustain"] : 0f;
+                    bool persistent = BoolOptions.ContainsKey("ArmorPersists") ? BoolOptions["ArmorPersists"] : false;
+                    shield.Limit = maxArmor;
+                    shield.CurrentAmount = armorOnSpawn;
+                    shield.DecayRate = armorDecay;
+                    shield.Efficacy = armorEfficacy;
+                    shield.SustainTime = armorSustain;
+                    shield.GetType().GetField("Persistant", BindingFlags.Instance | BindingFlags.Public).SetValue(shield, persistent);
+                }
+                else
+                {
+                    foreach (var process in player.ActiveArtificialHealthProcesses)
                     {
-                        var shield = shielded.Shield;
-                        int maxArmor = IntOptions.ContainsKey("MaxArmor") ? IntOptions["MaxArmor"] : (int)player.MaxArtificialHealth;
-                        float armorDecay = FloatOptions.ContainsKey("ArmorDecay") ? FloatOptions["ArmorDecay"] : 1.2f;
-                        float armorEfficacy = FloatOptions.ContainsKey("ArmorEfficacy") ? FloatOptions["ArmorEfficacy"] : 0.7f;
-                        float armorSustain = FloatOptions.ContainsKey("ArmorSustain") ? FloatOptions["ArmorSustain"] : 0f;
-                        bool persistent = BoolOptions.ContainsKey("ArmorPersists") ? BoolOptions["ArmorPersists"] : false;
-                        shield.Limit = maxArmor;
-                        shield.CurrentAmount = armorOnSpawn;
-                        shield.DecayRate = armorDecay;
-                        shield.Efficacy = armorEfficacy;
-                        shield.SustainTime = armorSustain;
-                        shield.GetType().GetField("Persistant", BindingFlags.Instance | BindingFlags.Public).SetValue(shield, persistent);
+                        module.ServerKillProcess(process.KillCode);
                     }
-                    else
-                    {
-                        foreach (var process in player.ActiveArtificialHealthProcesses)
-                        {
-                            module.ServerKillProcess(process.KillCode);
-                        }
-                        int maxArmor = IntOptions.ContainsKey("MaxArmor") ? IntOptions["MaxArmor"] : (int)player.MaxArtificialHealth;
-                        float armorDecay = FloatOptions.ContainsKey("ArmorDecay") ? FloatOptions["ArmorDecay"] : 1.2f;
-                        float armorEfficacy = FloatOptions.ContainsKey("ArmorEfficacy") ? FloatOptions["ArmorEfficacy"] : 0.7f;
-                        float armorSustain = FloatOptions.ContainsKey("ArmorSustain") ? FloatOptions["ArmorSustain"] : 0f;
-                        bool persistent = BoolOptions.ContainsKey("ArmorPersists") ? BoolOptions["ArmorPersists"] : false;
+                    int maxArmor = IntOptions.ContainsKey("MaxArmor") ? IntOptions["MaxArmor"] : (int)player.MaxArtificialHealth;
+                    float armorDecay = FloatOptions.ContainsKey("ArmorDecay") ? FloatOptions["ArmorDecay"] : 1.2f;
+                    float armorEfficacy = FloatOptions.ContainsKey("ArmorEfficacy") ? FloatOptions["ArmorEfficacy"] : 0.7f;
+                    float armorSustain = FloatOptions.ContainsKey("ArmorSustain") ? FloatOptions["ArmorSustain"] : 0f;
+                    bool persistent = BoolOptions.ContainsKey("ArmorPersists") ? BoolOptions["ArmorPersists"] : false;
 
-                        player.AddAhp(armorOnSpawn, maxArmor, armorDecay, armorEfficacy, armorSustain, persistent);
-                    }
-                });
+                    player.AddAhp(armorOnSpawn, maxArmor, armorDecay, armorEfficacy, armorSustain, persistent);
+                }
             }
 
             if (StringOptions.TryGetValue("Badge", out string badge))
             {
+                player.BadgeHidden = false;
                 player.RankName = badge;
                 if (StringOptions.TryGetValue("BadgeColor", out string badgeColor))
                 {
@@ -321,6 +316,22 @@ namespace AdvancedSubclassingRedux
         {
             Enabled = false;
             DestroyImmediate(this, true);
+        }
+    }
+
+    public class PlayerSnapshot
+    {
+        public string Badge { get; set; }
+        public string BadgeColor { get; set; }
+        public bool BadgeHidden { get; set; }
+        public string Nickname { get; set; }
+
+        public PlayerSnapshot(Player player)
+        {
+            Badge = player.RankName;
+            BadgeColor = player.RankColor;
+            BadgeHidden = player.BadgeHidden;
+            Nickname = player.DisplayNickname;
         }
     }
 }

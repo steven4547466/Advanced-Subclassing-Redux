@@ -175,18 +175,4 @@ namespace AdvancedSubclassingRedux.Managers
             }
         }
     }
-
-    public class PlayerSnapshot
-    {
-        public string Badge { get; set; }
-        public string BadgeColor { get; set; }
-        public string Nickname { get; set; }
-
-        public PlayerSnapshot(Player player)
-        {
-            Badge = player.RankName;
-            BadgeColor = player.RankColor;
-            Nickname = player.DisplayNickname;
-        }
-    }
 }
