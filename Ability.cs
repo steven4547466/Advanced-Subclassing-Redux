@@ -1,6 +1,7 @@
 ﻿using AdvancedSubclassingRedux.Managers;
 using Exiled.API.Features;
 using Exiled.API.Features.DamageHandlers;
+using MEC;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -11,6 +12,10 @@ namespace AdvancedSubclassingRedux
     {
         public string Name { get; set; }
 
+        public string Command { get; set; }
+
+        public List<string> Aliases { get; set; } = new List<string>();
+
         public bool Enabled { get; set; } = true;
 
         public Dictionary<string, List<Dictionary<string, object>>> Events { get; set; } = new Dictionary<string, List<Dictionary<string, object>>>();
@@ -20,6 +25,8 @@ namespace AdvancedSubclassingRedux
         public List<Dictionary<string, object>> OnGiven { get; set; } = new List<Dictionary<string, object>>();
         
         public List<Dictionary<string, object>> OnDied { get; set; } = new List<Dictionary<string, object>>();
+        
+        public List<Dictionary<string, object>> OnCommandExecute { get; set; } = new List<Dictionary<string, object>>();
 
         public List<EventInfo> EventInfos { get; set; } = new List<EventInfo>();
 
@@ -103,6 +110,20 @@ namespace AdvancedSubclassingRedux
             return false;
         }
 
+        public bool ExecuteCommand(Player player, List<string> arguments)
+        {
+            if (!Use(player))
+                return false;
+
+            if (Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass))
+            {
+                Timing.RunCoroutine(Helpers.Eval(typeof(AbilityExecuteData), new AbilityExecuteData(player, subclass, arguments), OnCommandExecute));
+                return true;
+            }
+
+            return false;
+        }
+
         public void Unload()
         {
             foreach (EventInfo eventInfo in AbilityManager.EventsConnected.Keys)
@@ -113,6 +134,22 @@ namespace AdvancedSubclassingRedux
                     AbilityManager.DisconnectFromEvent(eventInfo);
                 }
             }
+        }
+    }
+
+    public class AbilityExecuteData
+    {
+        public Player Player { get; set; }
+
+        public Subclass Subclass { get; set; }
+
+        public List<string> Arguments { get; set; }
+
+        public AbilityExecuteData(Player player, Subclass subclass, List<string> arguments)
+        {
+            Player = player;
+            Subclass = subclass;
+            Arguments = arguments;
         }
     }
 
