@@ -1,5 +1,6 @@
 ﻿using AdvancedSubclassingRedux.Managers;
 using Exiled.API.Features;
+using Exiled.API.Features.DamageHandlers;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -10,11 +11,15 @@ namespace AdvancedSubclassingRedux
     {
         public string Name { get; set; }
 
-        public bool Enabed { get; set; } = true;
+        public bool Enabled { get; set; } = true;
 
         public Dictionary<string, List<Dictionary<string, object>>> Events { get; set; } = new Dictionary<string, List<Dictionary<string, object>>>();
 
         public List<Dictionary<string, object>> Update { get; set; } = new List<Dictionary<string, object>>();
+        
+        public List<Dictionary<string, object>> OnGiven { get; set; } = new List<Dictionary<string, object>>();
+        
+        public List<Dictionary<string, object>> OnDied { get; set; } = new List<Dictionary<string, object>>();
 
         public List<EventInfo> EventInfos { get; set; } = new List<EventInfo>();
 
@@ -108,6 +113,25 @@ namespace AdvancedSubclassingRedux
                     AbilityManager.DisconnectFromEvent(eventInfo);
                 }
             }
+        }
+    }
+
+    public class AbilityOnDiedData
+    {
+        public Player Target { get; set; }
+
+        public Player Attacker { get; set; }
+
+        public CustomDamageHandler DamageHandler { get; set; }
+
+        public Subclass Subclass { get; set; }
+
+        public AbilityOnDiedData(Player target, Player attacker, CustomDamageHandler damageHandler, Subclass subclass)
+        {
+            Target = target;
+            Attacker = attacker;
+            DamageHandler = damageHandler;
+            Subclass = subclass;
         }
     }
 }

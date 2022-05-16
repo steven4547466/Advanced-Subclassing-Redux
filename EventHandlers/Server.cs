@@ -10,6 +10,7 @@
             }
 
             Tracking.PlayersWithClasses.Clear();
+            Tracking.PlayersJustLostClass.Clear();
             Tracking.PlayerSnapshots.Clear();
             Tracking.PlayerAbilityCooldowns.Clear();
             Tracking.PlayerAbilityUses.Clear();

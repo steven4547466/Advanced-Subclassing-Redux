@@ -31,6 +31,7 @@ namespace AdvancedSubclassingRedux
             PlayerEvents.Spawned += EventHandlers.Player.OnSpawned;
             PlayerEvents.Spawning += EventHandlers.Player.OnSpawning;
             PlayerEvents.ChangingRole += EventHandlers.Player.OnChangingRole;
+            PlayerEvents.Died += EventHandlers.Player.OnDied;
 
             ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
 
@@ -44,6 +45,7 @@ namespace AdvancedSubclassingRedux
             PlayerEvents.Spawned -= EventHandlers.Player.OnSpawned;
             PlayerEvents.Spawning -= EventHandlers.Player.OnSpawning;
             PlayerEvents.ChangingRole -= EventHandlers.Player.OnChangingRole;
+            PlayerEvents.Died -= EventHandlers.Player.OnDied;
 
             ServerEvents.RestartingRound -= EventHandlers.Server.OnRestartingRound;
 

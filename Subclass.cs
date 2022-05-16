@@ -1,6 +1,7 @@
 ﻿using AdvancedSubclassingRedux.Managers;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using Interactables.Interobjects.DoorUtils;
 using MEC;
 using PlayableScps.Interfaces;
 using PlayerStatsSystem;
@@ -30,6 +31,7 @@ namespace AdvancedSubclassingRedux
         public List<Dictionary<ItemType, float>> SpawnItems { get; set; } = new List<Dictionary<ItemType, float>>();
         public Dictionary<AmmoType, ushort> SpawnAmmo { get; set; } = new Dictionary<AmmoType, ushort>();
         public Dictionary<RoomType, float> SpawnLocations { get; set; } = new Dictionary<RoomType, float>();
+        public Dictionary<string, float> CustomSpawnLocations { get; set; } = new Dictionary<string, float>();
 
         public List<string> Abilities { get; set; } = new List<string>();
         public List<Ability> AbilitiesList { get; set; } = new List<Ability>();
@@ -112,10 +114,14 @@ namespace AdvancedSubclassingRedux
             bool giveBehaviour = false;
             foreach (Ability ability in AbilitiesList)
             {
-                if (ability.Update != null && ability.Update.Count > 0)
+                if (!giveBehaviour && ability.Update != null && ability.Update.Count > 0)
                 {
                     giveBehaviour = true;
-                    break;
+                }
+
+                if (ability.OnGiven != null && ability.OnGiven.Count > 0)
+                {
+                    Timing.RunCoroutine(Helpers.Eval(typeof(SubclassOnData), new SubclassOnData(player, this), ability.OnGiven));
                 }
             }
 
@@ -235,7 +241,7 @@ namespace AdvancedSubclassingRedux
 
     public class SubclassSpawnData
     {
-        public Vector3 SpawnPosition { get; set; } = Vector3.negativeInfinity;
+        public Vector3 SpawnPosition { get; set; } = Vector3.zero;
 
         public List<ItemType> SpawnItems { get; set; } = null;
 
@@ -251,6 +257,7 @@ namespace AdvancedSubclassingRedux
             {
                 float chanceSoFar = 0;
                 float rng = UnityEngine.Random.Range(0f, 100f);
+                bool selected = false;
                 foreach (KeyValuePair<RoomType, float> possibleRoom in subclass.SpawnLocations)
                 {
                     if (possibleRoom.Value + chanceSoFar >= rng)
@@ -258,10 +265,34 @@ namespace AdvancedSubclassingRedux
                         if (possibleRoom.Key == RoomType.Unknown) break;
                         Room room = Room.List.FirstOrDefault(r => r.Type == possibleRoom.Key);
                         if (room != null)
+                        {
                             SpawnPosition = room.Position + Vector3.up * 3;
+                            selected = true;
+                        }
+                        else
+                            continue;
                         break;
                     }
                     chanceSoFar += possibleRoom.Value;
+                }
+
+                if (!selected && subclass.CustomSpawnLocations != null && subclass.CustomSpawnLocations.Count > 0)
+                {
+                    foreach (KeyValuePair<string, float> possibleLocation in subclass.CustomSpawnLocations)
+                    {
+                        if (possibleLocation.Value + chanceSoFar >= rng)
+                        {
+                            Vector3 pos = GetCustomLocation(possibleLocation.Key);
+                            if (pos != Vector3.zero)
+                            {
+                                SpawnPosition = pos;
+                                selected = true;
+                            }
+                            else
+                                continue;
+                        }
+                        chanceSoFar += possibleLocation.Value;
+                    }
                 }
             }
 
@@ -286,6 +317,16 @@ namespace AdvancedSubclassingRedux
             }
             
             SpawnAmmo = subclass.SpawnAmmo;
+        }
+        private Vector3 GetCustomLocation(string name)
+        {
+            switch(name)
+            {
+                case "173Armory":
+                    DoorVariant door = DoorNametagExtension.NamedDoors["173_ARMORY"].TargetDoor;
+                    return door.transform.position + new Vector3(1f, 0, 1f);
+            }
+            return Vector3.zero;
         }
     }
 

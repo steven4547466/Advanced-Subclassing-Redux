@@ -268,7 +268,7 @@ namespace AdvancedSubclassingRedux.Managers
                 else
                 {
                     Ability ability = Helpers.Deserializer.Deserialize<Ability>(file);
-                    if (!ability.Enabed)
+                    if (!ability.Enabled)
                     {
                         Log.Debug("Ability " + ability.Name + " is disabled, skipping", Plugin.Instance.Config.Debug);
                         continue;
