@@ -2,6 +2,7 @@
 using Exiled.API.Features;
 using System;
 using ServerEvents = Exiled.Events.Handlers.Server;
+using PlayerEvents = Exiled.Events.Handlers.Player;
 
 namespace AdvancedSubclassingRedux
 {
@@ -27,7 +28,9 @@ namespace AdvancedSubclassingRedux
             AbilityManager.ReloadAbilities();
             SubclassManager.ReloadSubclasses();
 
-            PlayerMovementSync.OnPlayerSpawned += EventHandlers.Player.OnPlayerSpawned;
+            PlayerEvents.Spawned += EventHandlers.Player.OnSpawned;
+            PlayerEvents.Spawning += EventHandlers.Player.OnSpawning;
+            PlayerEvents.ChangingRole += EventHandlers.Player.OnChangingRole;
 
             ServerEvents.RestartingRound += EventHandlers.Server.OnRestartingRound;
 
@@ -38,7 +41,9 @@ namespace AdvancedSubclassingRedux
 
         public override void OnDisabled()
         {
-            PlayerMovementSync.OnPlayerSpawned -= EventHandlers.Player.OnPlayerSpawned;
+            PlayerEvents.Spawned -= EventHandlers.Player.OnSpawned;
+            PlayerEvents.Spawning -= EventHandlers.Player.OnSpawning;
+            PlayerEvents.ChangingRole -= EventHandlers.Player.OnChangingRole;
 
             ServerEvents.RestartingRound -= EventHandlers.Server.OnRestartingRound;
 

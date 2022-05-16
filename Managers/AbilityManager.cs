@@ -129,7 +129,7 @@ namespace AdvancedSubclassingRedux.Managers
 
                                         if (expectedType != t)
                                         {
-                                            Log.Info("Type mismatch: " + expectedType.FullName + " != " + t.FullName);
+                                            Log.Error("Type mismatch: " + expectedType.FullName + " != " + t.FullName);
                                             skip = true;
                                             break;
                                         }
@@ -194,7 +194,7 @@ namespace AdvancedSubclassingRedux.Managers
                     if (skip || !hasCheck)
                         continue;
 
-                    Log.Info(ability.Name + " is being executed!");
+                    Log.Debug(ability.Name + " is being executed!", Plugin.Instance.Config.Debug);
 
                     if (!ability.Use(player))
                         return;

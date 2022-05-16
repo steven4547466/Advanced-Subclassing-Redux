@@ -136,17 +136,17 @@ namespace AdvancedSubclassingRedux.Managers
             subclass.OnGive(player);
         }
 
-        public static void MaybeAddClasses(Player player)
+        public static void MaybeAddClasses(Player player, RoleType newRole)
         {
             if (!Round.IsStarted) return;
             RemoveClass(player);
 
-            if (RolesForClass.TryGetValue(player.Role, out List<Subclass> subclassPossibilities))
+            if (RolesForClass.TryGetValue(newRole, out List<Subclass> subclassPossibilities))
             {
                 float rng = Random.Range(0f, 1f);
                 foreach (Subclass potentialClass in subclassPossibilities)
                 {
-                    if (rng <= potentialClass.AffectsRoles[player.Role])
+                    if (rng <= potentialClass.AffectsRoles[newRole])
                     {
                         if (potentialClass.IntOptions.TryGetValue("MaxSpawnPerRound", out int maxPerRound))
                         {

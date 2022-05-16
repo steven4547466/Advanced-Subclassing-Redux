@@ -14,6 +14,7 @@ namespace AdvancedSubclassingRedux
 {
     public class Subclass
     {
+        private static Dictionary<Player, SubclassSpawnData> SpawnDataPerPlayer { get; set; } = new Dictionary<Player, SubclassSpawnData>();
         public string Name { get; set; }
 
         public Dictionary<RoleType, float> AffectsRoles { get; set; } = new Dictionary<RoleType, float>();
@@ -80,18 +81,11 @@ namespace AdvancedSubclassingRedux
 
             Tracking.PlayersWithClasses.Remove(player);
             Tracking.PlayerAbilityCooldowns.Remove(player);
+            SpawnDataPerPlayer.Remove(player);
         }
 
-        public void OnGive(Player player)
+        public void OnSpawned(Player player)
         {
-            Tracking.PlayerSnapshots.Add(player, new PlayerSnapshot(player));
-            Tracking.PlayerAbilityCooldowns.Add(player, new Dictionary<Ability, DateTime>());
-
-            if (!Tracking.SubclassesGiven.ContainsKey(this))
-                Tracking.SubclassesGiven.Add(this, 1);
-            else
-                Tracking.SubclassesGiven[this]++;
-
             if (StringOptions.TryGetValue("GotClassMessage", out string classMessage))
             {
                 player.Broadcast(IntOptions.TryGetValue("GotClassMessageDuration", out int duration) ? (ushort)duration : (ushort)5, classMessage, Broadcast.BroadcastFlags.Normal);
@@ -133,68 +127,6 @@ namespace AdvancedSubclassingRedux
             if (OnGiven != null && OnGiven.Count > 0)
             {
                 Timing.RunCoroutine(Helpers.Eval(typeof(SubclassOnData), new SubclassOnData(player, this), OnGiven));
-            }
-
-            if (FloatOptions.TryGetValue("SpawnLocationX", out float spawnX) && FloatOptions.TryGetValue("SpawnLocationY", out float spawnY) && FloatOptions.TryGetValue("SpawnLocationZ", out float spawnZ))
-            {
-                player.Position = new Vector3(spawnX, spawnY, spawnZ);
-            }
-            else if (SpawnLocations != null && SpawnLocations.Count > 0)
-            {
-                float chanceSoFar = 0;
-                float rng = UnityEngine.Random.Range(0f, 100f);
-                foreach (KeyValuePair<RoomType, float> possibleRoom in SpawnLocations)
-                {
-                    if (possibleRoom.Value + chanceSoFar >= rng)
-                    {
-                        if (possibleRoom.Key == RoomType.Unknown) break;
-                        Vector3 pos = player.Position;
-                        Room room = Room.List.FirstOrDefault(r => r.Type == possibleRoom.Key);
-                        if (room != null)
-                            pos = room.Position + Vector3.up * 3;
-                        player.Position = pos;
-                        break;
-                    }
-                    chanceSoFar += possibleRoom.Value;
-                }
-            }
-
-            if (BoolOptions.TryGetValue("RemoveDefaultSpawnItems", out bool removeDefaultSpawnItems))
-            {
-                if (removeDefaultSpawnItems)
-                {
-                    player.ClearInventory();
-                }
-            }
-
-            if (SpawnItems != null && SpawnItems.Count > 0)
-            {
-                foreach (Dictionary<ItemType, float> possibleItems in SpawnItems)
-                {
-                    float chanceSoFar = 0;
-                    float rng = UnityEngine.Random.Range(0f, 100f);
-                    foreach (KeyValuePair<ItemType, float> item in possibleItems)
-                    {
-                        if (item.Value + chanceSoFar >= rng)
-                        {
-                            if (item.Key == ItemType.None) break;
-                            player.AddItem(item.Key);
-                            break;
-                        }
-                        chanceSoFar += item.Value;
-                    }
-                }
-            }
-
-            if (SpawnAmmo != null)
-            {
-                foreach (KeyValuePair<AmmoType, ushort> ammo in SpawnAmmo)
-                {
-                    if (ammo.Value >= 0)
-                    {
-                        player.SetAmmo(ammo.Key, ammo.Value);
-                    }
-                }
             }
 
             if (IntOptions.TryGetValue("ArmorOnSpawn", out int armorOnSpawn))
@@ -268,6 +200,92 @@ namespace AdvancedSubclassingRedux
             if (FloatOptions.TryGetValue("ScaleZ", out float scaleZ)) scale.z = scaleZ;
 
             player.Scale = scale;
+        }
+
+        public void OnSpawning(Player player)
+        {
+            
+        }
+
+        public void OnGive(Player player)
+        {
+            Tracking.PlayerSnapshots.Add(player, new PlayerSnapshot(player));
+            Tracking.PlayerAbilityCooldowns.Add(player, new Dictionary<Ability, DateTime>());
+
+            if (!Tracking.SubclassesGiven.ContainsKey(this))
+                Tracking.SubclassesGiven.Add(this, 1);
+            else
+                Tracking.SubclassesGiven[this]++;
+        }
+
+        public SubclassSpawnData GetSpawnData(Player player)
+        {
+            if (SpawnDataPerPlayer.TryGetValue(player, out SubclassSpawnData spawnData))
+            {
+                return spawnData;
+            }
+            else
+            {
+                SubclassSpawnData data = new SubclassSpawnData(this);
+                SpawnDataPerPlayer.Add(player, data);
+                return data;
+            }
+        }
+    }
+
+    public class SubclassSpawnData
+    {
+        public Vector3 SpawnPosition { get; set; } = Vector3.negativeInfinity;
+
+        public List<ItemType> SpawnItems { get; set; } = null;
+
+        public Dictionary<AmmoType, ushort> SpawnAmmo { get; set; } = null;
+
+        public SubclassSpawnData(Subclass subclass)
+        {
+            if (subclass.FloatOptions.TryGetValue("SpawnLocationX", out float spawnX) && subclass.FloatOptions.TryGetValue("SpawnLocationY", out float spawnY) && subclass.FloatOptions.TryGetValue("SpawnLocationZ", out float spawnZ))
+            {
+                SpawnPosition = new Vector3(spawnX, spawnY, spawnZ);
+            }
+            else if (subclass.SpawnLocations != null && subclass.SpawnLocations.Count > 0)
+            {
+                float chanceSoFar = 0;
+                float rng = UnityEngine.Random.Range(0f, 100f);
+                foreach (KeyValuePair<RoomType, float> possibleRoom in subclass.SpawnLocations)
+                {
+                    if (possibleRoom.Value + chanceSoFar >= rng)
+                    {
+                        if (possibleRoom.Key == RoomType.Unknown) break;
+                        Room room = Room.List.FirstOrDefault(r => r.Type == possibleRoom.Key);
+                        if (room != null)
+                            SpawnPosition = room.Position + Vector3.up * 3;
+                        break;
+                    }
+                    chanceSoFar += possibleRoom.Value;
+                }
+            }
+
+            if (subclass.SpawnItems != null && subclass.SpawnItems.Count > 0)
+            {
+                SpawnItems = new List<ItemType>();
+                foreach (Dictionary<ItemType, float> possibleItems in subclass.SpawnItems)
+                {
+                    float chanceSoFar = 0;
+                    float rng = UnityEngine.Random.Range(0f, 100f);
+                    foreach (KeyValuePair<ItemType, float> item in possibleItems)
+                    {
+                        if (item.Value + chanceSoFar >= rng)
+                        {
+                            if (item.Key == ItemType.None) break;
+                            SpawnItems.Add(item.Key);
+                            break;
+                        }
+                        chanceSoFar += item.Value;
+                    }
+                }
+            }
+            
+            SpawnAmmo = subclass.SpawnAmmo;
         }
     }
 
