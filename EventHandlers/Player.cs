@@ -16,7 +16,7 @@ namespace AdvancedSubclassingRedux.EventHandlers
             {
                 foreach (Ability ability in subclass.AbilitiesList)
                 {
-                    if (ability.OnGiven != null && ability.OnGiven.Count > 0)
+                    if (ability.OnDied != null && ability.OnDied.Count > 0)
                     {
                         Timing.RunCoroutine(Helpers.Eval(typeof(SubclassOnData), new AbilityOnDiedData(ev.Target, ev.Killer, ev.Handler, subclass), ability.OnDied));
                     }

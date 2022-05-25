@@ -126,6 +126,9 @@ namespace AdvancedSubclassingRedux.Managers
         {
             if (!Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass)) return;
 
+            if (Tracking.PlayersJustLostClass.ContainsKey(player))
+                Tracking.PlayersJustLostClass.Remove(player);
+
             Tracking.PlayersJustLostClass.Add(player, subclass);
             subclass.CleanUp(player);
         }
