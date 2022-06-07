@@ -45,6 +45,8 @@ namespace AdvancedSubclassingRedux
 
         public List<Dictionary<string, object>> OnRemoved { get; set; } = new List<Dictionary<string, object>>();
 
+        public RoleType SpawnsAs { get; set; } = RoleType.None;
+
         public void Unload()
         {
 
@@ -80,6 +82,9 @@ namespace AdvancedSubclassingRedux
             }
 
             player.Scale = Vector3.one;
+
+            player.CustomInfo = String.Empty;
+            player.InfoArea &= ~PlayerInfoArea.CustomInfo;
 
             Tracking.PlayersWithClasses.Remove(player);
             Tracking.PlayerAbilityCooldowns.Remove(player);
@@ -179,6 +184,12 @@ namespace AdvancedSubclassingRedux
                 }
             }
 
+            if (StringOptions.TryGetValue("CustomInfo", out string customInfo))
+            {
+                player.CustomInfo = customInfo;
+                player.InfoArea |= PlayerInfoArea.CustomInfo;
+            }
+
             if (StringOptions.TryGetValue("Nickname", out string nickname))
             {
                 player.DisplayNickname = nickname.Replace("{name}", player.Nickname);
@@ -206,6 +217,17 @@ namespace AdvancedSubclassingRedux
             if (FloatOptions.TryGetValue("ScaleZ", out float scaleZ)) scale.z = scaleZ;
 
             player.Scale = scale;
+
+
+            if (FloatOptions.TryGetValue("SpawnPositionDelay", out float spawnDelay))
+            {
+                Timing.CallDelayed(spawnDelay, () =>
+                {
+                    SubclassSpawnData spawnData = GetSpawnData(player);
+                    player.ReferenceHub.playerMovementSync.AddSafeTime(5f);
+                    player.Position = spawnData.SpawnPosition;
+                });
+            }
         }
 
         public void OnSpawning(Player player)

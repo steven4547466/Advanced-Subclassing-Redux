@@ -278,7 +278,7 @@ namespace AdvancedSubclassingRedux.Managers
                         foreach (Type eventType in eventTypes)
                         {
                             EventInfo eventInfo = eventType.GetEvent(eventName);
-                            if (eventInfo != null)
+                            if (eventInfo != null && !Delegates.ContainsKey(eventInfo))
                             {
                                 List<Type> args = new List<Type>();
 
@@ -287,14 +287,13 @@ namespace AdvancedSubclassingRedux.Managers
                                     args.Add(p.ParameterType);
                                 }
 
-                                if (!Delegates.ContainsKey(eventInfo))
-                                {
-                                    MethodInfo mi = typeof(AbilityManager).GetMethod("Helper");
+                                
+                                MethodInfo mi = typeof(AbilityManager).GetMethod("Helper");
 
-                                    Delegate del = Delegate.CreateDelegate(eventInfo.EventHandlerType, mi.MakeGenericMethod(args.ToArray()));
-                                    eventInfo.AddEventHandler(null, del);
-                                    Delegates.Add(eventInfo, del);
-                                }
+                                Delegate del = Delegate.CreateDelegate(eventInfo.EventHandlerType, mi.MakeGenericMethod(args.ToArray()));
+                                eventInfo.AddEventHandler(null, del);
+                                Delegates.Add(eventInfo, del);
+
 
                                 if (!EventsConnected.ContainsKey(eventInfo))
                                     EventsConnected.Add(eventInfo, 0);

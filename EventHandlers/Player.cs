@@ -35,6 +35,12 @@ namespace AdvancedSubclassingRedux.EventHandlers
         {
             if (Tracking.PlayersWithClasses.TryGetValue(ev.Player, out Subclass subclass))
             {
+                if (subclass.FloatOptions.ContainsKey("SpawnPositionDelay"))
+                {
+                    subclass.OnSpawning(ev.Player);
+                    return;
+                }
+                
                 SubclassSpawnData spawnData = subclass.GetSpawnData(ev.Player);
                 ev.Player.ReferenceHub.playerMovementSync.AddSafeTime(5f);
                 ev.Position = spawnData.SpawnPosition == Vector3.zero ? ev.Position : spawnData.SpawnPosition;
@@ -59,14 +65,14 @@ namespace AdvancedSubclassingRedux.EventHandlers
                     ev.Items.AddRange(spawnData.SpawnItems);
                 }
 
-                if (spawnData.SpawnAmmo != null)
+                if (subclass.BoolOptions.TryGetValue("RemoveDefaultSpawnAmmo", out bool removeDefaultAmmo))
                 {
-                    if (subclass.BoolOptions.TryGetValue("RemoveDefaultSpawnAmmo", out bool removeDefaultAmmo))
-                    {
-                        if (removeDefaultAmmo)
-                            ev.Ammo.Clear();
-                    }
-                    
+                    if (removeDefaultAmmo)
+                        ev.Ammo.Clear();
+                }
+                
+                if (spawnData.SpawnAmmo != null)
+                {   
                     foreach (var ammo in spawnData.SpawnAmmo)
                     {
                         if (ev.Ammo.ContainsKey(ammo.Key.GetItemType()))
@@ -74,6 +80,9 @@ namespace AdvancedSubclassingRedux.EventHandlers
                         ev.Ammo.Add(ammo.Key.GetItemType(), ammo.Value);
                     }
                 }
+
+                if (subclass.SpawnsAs != RoleType.None)
+                    ev.NewRole = subclass.SpawnsAs;
             }
         }            
     }
