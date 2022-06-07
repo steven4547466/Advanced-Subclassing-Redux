@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Exiled.API.Features;
-using HarmonyLib;
+﻿using Exiled.API.Features;
 using RemoteAdmin;
+using System;
+using System.Linq;
 
 namespace AdvancedSubclassingRedux.Patches
 {
@@ -15,7 +11,7 @@ namespace AdvancedSubclassingRedux.Patches
         public static bool Prefix(QueryProcessor __instance, string query)
         {
             Player player = Player.Get(__instance.gameObject);
-            
+
             if (Tracking.PlayersWithClasses.TryGetValue(player, out Subclass subclass))
             {
                 string[] array = query.Trim().Split(QueryProcessor.SpaceArray, 32, StringSplitOptions.RemoveEmptyEntries); // if you need more than 32 arguments, you're doing something wrong

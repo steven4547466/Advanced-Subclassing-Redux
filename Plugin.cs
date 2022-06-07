@@ -1,8 +1,8 @@
 ﻿using AdvancedSubclassingRedux.Managers;
 using Exiled.API.Features;
 using System;
-using ServerEvents = Exiled.Events.Handlers.Server;
 using PlayerEvents = Exiled.Events.Handlers.Player;
+using ServerEvents = Exiled.Events.Handlers.Server;
 
 namespace AdvancedSubclassingRedux
 {

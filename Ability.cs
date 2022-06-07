@@ -21,11 +21,11 @@ namespace AdvancedSubclassingRedux
         public Dictionary<string, List<Dictionary<string, object>>> Events { get; set; } = new Dictionary<string, List<Dictionary<string, object>>>();
 
         public List<Dictionary<string, object>> Update { get; set; } = new List<Dictionary<string, object>>();
-        
+
         public List<Dictionary<string, object>> OnGiven { get; set; } = new List<Dictionary<string, object>>();
-        
+
         public List<Dictionary<string, object>> OnDied { get; set; } = new List<Dictionary<string, object>>();
-        
+
         public List<Dictionary<string, object>> OnCommandExecute { get; set; } = new List<Dictionary<string, object>>();
 
         public List<EventInfo> EventInfos { get; set; } = new List<EventInfo>();

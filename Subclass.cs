@@ -232,7 +232,7 @@ namespace AdvancedSubclassingRedux
 
         public void OnSpawning(Player player)
         {
-            
+
         }
 
         public void OnGive(Player player)
@@ -337,12 +337,12 @@ namespace AdvancedSubclassingRedux
                     }
                 }
             }
-            
+
             SpawnAmmo = subclass.SpawnAmmo;
         }
         private Vector3 GetCustomLocation(string name)
         {
-            switch(name)
+            switch (name)
             {
                 case "173Armory":
                     DoorVariant door = DoorNametagExtension.NamedDoors["173_ARMORY"].TargetDoor;

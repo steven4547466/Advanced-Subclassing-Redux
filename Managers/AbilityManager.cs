@@ -287,7 +287,7 @@ namespace AdvancedSubclassingRedux.Managers
                                     args.Add(p.ParameterType);
                                 }
 
-                                
+
                                 MethodInfo mi = typeof(AbilityManager).GetMethod("Helper");
 
                                 Delegate del = Delegate.CreateDelegate(eventInfo.EventHandlerType, mi.MakeGenericMethod(args.ToArray()));

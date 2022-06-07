@@ -1,6 +1,5 @@
 ﻿using AdvancedSubclassingRedux.Managers;
 using Exiled.API.Extensions;
-using Exiled.API.Features;
 using Exiled.Events.EventArgs;
 using MEC;
 using UnityEngine;
@@ -9,7 +8,7 @@ namespace AdvancedSubclassingRedux.EventHandlers
 {
     public class Player
     {
-        
+
         public static void OnDied(DiedEventArgs ev)
         {
             if (Tracking.PlayersJustLostClass.TryGetValue(ev.Target, out Subclass subclass))
@@ -40,7 +39,7 @@ namespace AdvancedSubclassingRedux.EventHandlers
                     subclass.OnSpawning(ev.Player);
                     return;
                 }
-                
+
                 SubclassSpawnData spawnData = subclass.GetSpawnData(ev.Player);
                 ev.Player.ReferenceHub.playerMovementSync.AddSafeTime(5f);
                 ev.Position = spawnData.SpawnPosition == Vector3.zero ? ev.Position : spawnData.SpawnPosition;
@@ -59,7 +58,7 @@ namespace AdvancedSubclassingRedux.EventHandlers
                     if (removeDefaultItems)
                         ev.Items.Clear();
                 }
-                
+
                 if (spawnData.SpawnItems != null)
                 {
                     ev.Items.AddRange(spawnData.SpawnItems);
@@ -70,9 +69,9 @@ namespace AdvancedSubclassingRedux.EventHandlers
                     if (removeDefaultAmmo)
                         ev.Ammo.Clear();
                 }
-                
+
                 if (spawnData.SpawnAmmo != null)
-                {   
+                {
                     foreach (var ammo in spawnData.SpawnAmmo)
                     {
                         if (ev.Ammo.ContainsKey(ammo.Key.GetItemType()))
@@ -84,6 +83,6 @@ namespace AdvancedSubclassingRedux.EventHandlers
                 if (subclass.SpawnsAs != RoleType.None)
                     ev.NewRole = subclass.SpawnsAs;
             }
-        }            
+        }
     }
 }
