@@ -1,4 +1,5 @@
 ﻿using AdvancedSubclassingRedux.Managers;
+using Exiled.API.Enums;
 using Exiled.API.Features;
 using System;
 using PlayerEvents = Exiled.Events.Handlers.Player;
@@ -15,6 +16,7 @@ namespace AdvancedSubclassingRedux
         public override string Prefix => "ASR";
         public override Version Version => new Version(1, 0, 0);
         public override Version RequiredExiledVersion => new Version(5, 0, 0, 0);
+        public override PluginPriority Priority => PluginPriority.Last;
 
         public HarmonyLib.Harmony Harmony { get; private set; }
 
